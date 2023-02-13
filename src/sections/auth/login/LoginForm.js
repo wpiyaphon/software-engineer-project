@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 // @mui
 import { Link, Stack, IconButton, InputAdornment, TextField, Checkbox } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
+// auth
+import { useAuthContext } from '../../../auth/useAuthContext';
 // components
 import Iconify from '../../../components/iconify';
 
@@ -10,11 +12,14 @@ import Iconify from '../../../components/iconify';
 
 export default function LoginForm() {
   const navigate = useNavigate();
+  const { login } = useAuthContext();
 
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleClick = () => {
-    navigate('/dashboard', { replace: true });
+  const handleClick = (data) => {
+    console.log(data)
+    // login(email, password);
+    // navigate('/dashboard', { replace: true });
   };
 
   return (
