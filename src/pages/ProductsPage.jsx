@@ -1,10 +1,18 @@
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
+import PropTypes from 'prop-types';
+import * as Yup from 'yup';
+// form
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
 import { styled, alpha } from '@mui/material/styles';
-import { Container, Stack, Typography, InputAdornment, Toolbar, Button, OutlinedInput } from '@mui/material';
+import { Container, Stack, Typography, InputAdornment, Toolbar, Button, OutlinedInput, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
 import SearchIcon from '@mui/icons-material/Search';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
+// components
+import FormProvider, { RHFTextField, RHFUpload } from '../components/hook-form';
 // sections
 import { ProductList } from '../sections/products';
 // mock
@@ -44,6 +52,28 @@ export default function ProductsPage() {
         setFilterName(event.target.value);
     };
 
+    const [openEditDialog, setOpenEditDialog] = useState(false);
+
+    const [openNewProductDialog, setOpenNewProductDialog] = useState(false);
+
+    const [selectedProduct, setSelectedProduct] = useState({});
+
+    const handleSelect = (data) => {
+        setSelectedProduct(data);
+        handleOpenEditDialog();
+    }
+
+    const handleOpenEditDialog = () => {
+        setOpenEditDialog(true);
+    }
+
+    const handleCloseEditDialog = () => {
+        setOpenEditDialog(false);
+        setTimeout(() => {
+            setSelectedProduct({});
+        }, 200)
+    }
+
     return (
         <>
             <Helmet>
@@ -67,12 +97,230 @@ export default function ProductsPage() {
                         }
                     />
 
-                    <Button variant="contained" sx={{ height: 55, ml: 2, width: 240 }}>
+                    <Button variant="contained" sx={{ height: 55, ml: 2, width: 240 }} onClick={() => setOpenNewProductDialog(true)}>
                         <AddRoundedIcon /> New Product
                     </Button>
                 </StyledRoot>
-                <ProductList products={PRODUCTS} />
+                <ProductList products={PRODUCTS} onEdit={handleSelect} />
             </Container>
+            <NewProductDialog open={openNewProductDialog} onClose={() => setOpenNewProductDialog(false)} />
+            {Object.keys(selectedProduct).length !== 0 && (
+                <EditProductDialog open={openEditDialog} onClose={handleCloseEditDialog} product={selectedProduct} />
+            )}
         </>
+    )
+}
+
+// ----------------------------------------------------------------------
+
+NewProductDialog.propTypes = {
+    open: PropTypes.bool,
+    onClose: PropTypes.func
+};
+
+export function NewProductDialog({ open, onClose }) {
+
+    const NewProductSchema = Yup.object().shape({
+        productImage: Yup.string().required('Product image is required'),
+        productName: Yup.string().required('Product name is required'),
+        productAmount: Yup.string().required('Product amount is required')
+    });
+
+    const defaultValues = {
+        productImage: '',
+        productName: '',
+        productAmount: ''
+    }
+
+    const methods = useForm({
+        resolver: yupResolver(NewProductSchema),
+        defaultValues
+    });
+
+    const {
+        reset,
+        setError,
+        setValue,
+        watch,
+        handleSubmit,
+        formState: { isSubmitting, isSubmitSuccessful }
+    } = methods;
+
+    const values = watch();
+
+    const onSubmit = async (data) => {
+        try {
+            console.log(data);
+        } catch (error) {
+            console.error(error.message);
+            setError('afterSubmit', {
+                ...error,
+                message: error.message
+            });
+        }
+    }
+
+    // Product Image 
+    const handleDropFiles = useCallback(
+        (acceptedFiles) => {
+            const file = acceptedFiles[0];
+            const newFile = Object.assign(file, {
+                preview: URL.createObjectURL(file),
+            });
+            if (file) {
+                setValue('productImage', newFile);
+            }
+        },
+        [setValue]
+    );
+
+    const handleRemoveFile = (inputFile) => {
+        const filtered = values.productImage && values.productImage?.filter((file) => file !== inputFile);
+        setValue('productImage', filtered);
+    };
+
+    const handleClose = () => {
+        onClose();
+        setTimeout(() => {
+            reset(defaultValues);
+        }, 200)
+    }
+
+    return (
+        <FormProvider methods={methods}>
+            <Dialog fullWidth open={open} onClose={handleClose}>
+                <DialogTitle>
+                    New Product
+                </DialogTitle>
+                <DialogContent>
+                    <RHFUpload
+                        name="productImage"
+                        thumbnail
+                        onDrop={handleDropFiles}
+                        onRemove={handleRemoveFile}
+                    />
+                    <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                        <RHFTextField fullWidth name="productName" label="Product" />
+                        <RHFTextField fullWidth name="productAmount" label="Amount" />
+                    </Stack>
+                </DialogContent>
+                <DialogActions sx={{ mb: 2, mx: 2 }}>
+                    <Button variant="outlined" color="inherit" onClick={handleClose}>Close</Button>
+                    <LoadingButton
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        loading={isSubmitSuccessful || isSubmitting}
+                        onClick={handleSubmit(onSubmit)}
+                    >
+                        Create
+                    </LoadingButton>
+                </DialogActions>
+            </Dialog>
+        </FormProvider>
+    )
+}
+
+// ----------------------------------------------------------------------
+
+EditProductDialog.propTypes = {
+    open: PropTypes.bool,
+    onClose: PropTypes.func,
+    product: PropTypes.object
+};
+
+export function EditProductDialog({ open, onClose, product }) {
+
+    const EditProductDialog = Yup.object().shape({
+        productImage: Yup.string().required('Product image is required'),
+        productName: Yup.string().required('Product name is required'),
+        productAmount: Yup.string().required('Product amount is required')
+    });
+
+    const defaultValues = {
+        productImage: product?.cover || '',
+        productName: product?.name || '',
+        productAmount: '0'
+    }
+
+    const methods = useForm({
+        resolver: yupResolver(EditProductDialog),
+        defaultValues
+    });
+
+    const {
+        reset,
+        setError,
+        setValue,
+        watch,
+        handleSubmit,
+        formState: { isSubmitting, isSubmitSuccessful }
+    } = methods;
+
+    const values = watch();
+
+    const onSubmit = async (data) => {
+        try {
+            console.log(data);
+        } catch (error) {
+            console.error(error.message);
+            setError('afterSubmit', {
+                ...error,
+                message: error.message
+            });
+        }
+    }
+
+    // Product Image 
+    const handleDropFiles = useCallback(
+        (acceptedFiles) => {
+            const file = acceptedFiles[0];
+            const newFile = Object.assign(file, {
+                preview: URL.createObjectURL(file),
+            });
+            if (file) {
+                setValue('productImage', newFile);
+            }
+        },
+        [setValue]
+    );
+
+    const handleRemoveFile = (inputFile) => {
+        const filtered = values.productImage && values.productImage?.filter((file) => file !== inputFile);
+        setValue('productImage', filtered);
+    };
+
+    return (
+        <FormProvider methods={methods}>
+            <Dialog fullWidth open={open} onClose={onClose}>
+                <DialogTitle>
+                    New Product
+                </DialogTitle>
+                <DialogContent>
+                    <RHFUpload
+                        name="productImage"
+                        thumbnail
+                        onDrop={handleDropFiles}
+                        onRemove={handleRemoveFile}
+                    />
+                    <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                        <RHFTextField fullWidth name="productName" label="Product" />
+                        <RHFTextField fullWidth name="productAmount" label="Amount" />
+                    </Stack>
+                </DialogContent>
+                <DialogActions sx={{ mb: 2, mx: 2 }}>
+                    <Button variant="outlined" color="inherit" onClick={onClose}>Close</Button>
+                    <LoadingButton
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        loading={isSubmitSuccessful || isSubmitting}
+                        onClick={handleSubmit(onSubmit)}
+                    >
+                        Create
+                    </LoadingButton>
+                </DialogActions>
+            </Dialog>
+        </FormProvider>
     )
 }

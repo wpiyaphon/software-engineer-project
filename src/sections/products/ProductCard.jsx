@@ -22,15 +22,18 @@ const StyledProductImg = styled('img')({
 
 ShopProductCard.propTypes = {
   product: PropTypes.object,
+  onEdit: PropTypes.func,
 };
 
-export default function ShopProductCard({ product }) {
+export default function ShopProductCard({ product, onEdit }) {
   const { name, cover } = product;
 
   return (
     <Card>
       <Box sx={{ pt: '100%', position: 'relative' }}>
-        <IconButton size="large" sx={{
+        <IconButton 
+        size="large" 
+        sx={{
           zIndex: 9,
           bottom: 12,
           right: 16,
@@ -41,7 +44,9 @@ export default function ShopProductCard({ product }) {
           '&:hover': {
             backgroundColor: 'primary.dark'
           },
-        }}>
+        }}
+        onClick={() => onEdit(product)}
+        >
           <EditIcon />
         </IconButton>
 
