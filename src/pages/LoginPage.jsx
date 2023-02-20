@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 // @mui
-import { Grid } from "@mui/material";
+import { Container, Typography, Grid } from "@mui/material";
 // components
 import Logo from "../components/logo/Logo";
 //

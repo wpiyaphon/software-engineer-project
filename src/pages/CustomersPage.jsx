@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { useState } from 'react';
-import {filter, sample} from 'lodash';
+import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 // @mui
 import {
@@ -8,6 +8,7 @@ import {
     Table,
     Stack,
     Paper,
+    Avatar,
     Button,
     Popover,
     Checkbox,
@@ -31,11 +32,7 @@ import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar } from '../sections/customers';
 // mock
-import CUSTOMERS_LIST from '../_mock/customers.jsx';
-
-import { faker } from '@faker-js/faker';
-import db from "../_mock/firebase"
-import {doc, setDoc, Timestamp} from "firebase/firestore";
+import CUSTOMERS_LIST from '../_mock/customers';
 
 // ----------------------------------------------------------------------
 
@@ -152,7 +149,6 @@ export default function CustomersPage() {
     const filteredUsers = applySortFilter(CUSTOMERS_LIST, getComparator(order, orderBy), filterName);
 
     const isNotFound = !filteredUsers.length && !!filterName;
-
 
     return (
         <>
