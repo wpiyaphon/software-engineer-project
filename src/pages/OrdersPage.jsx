@@ -32,7 +32,7 @@ import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar } from '../sections/customers';
 // mock
-import CUSTOMERS_LIST from '../_mock/customers';
+import CUSTOMERS_LIST from '../_mock/customers.jsx';
 
 // ----------------------------------------------------------------------
 
