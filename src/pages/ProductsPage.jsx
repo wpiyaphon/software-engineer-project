@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import PropTypes from 'prop-types';
 import * as Yup from 'yup';
 // form
@@ -17,6 +17,11 @@ import FormProvider, { RHFTextField, RHFUpload } from '../components/hook-form';
 import { ProductList } from '../sections/products';
 // mock
 import PRODUCTS from '../_mock/products';
+import db from "../_mock/firebase.js";
+import {doc, setDoc, Timestamp} from "firebase/firestore";
+import {faker} from "@faker-js/faker";
+import {Product, productConverter} from "../_mock/products";
+import { getStorage, ref } from "firebase/storage";
 
 // ----------------------------------------------------------------------
 
@@ -43,7 +48,6 @@ const StyledSearch = styled(OutlinedInput)(({ theme }) => ({
 }));
 
 // ----------------------------------------------------------------------
-
 export default function ProductsPage() {
 
     const [filterName, setFilterName] = useState('');
@@ -148,8 +152,28 @@ export function NewProductDialog({ open, onClose }) {
 
     const values = watch();
 
-    const onSubmit = async (data) => {
+    const storage = getStorage();
+    const [selectedProductImage, setSelectedProductImage] = useState("")
+
+    const onSubmit = (data) => {
         try {
+            /*
+            const productData = new Product(
+                data.productName,
+                "/assets/images/products/product_13.jpg",
+                data.productAmount,
+                0,
+                ['#00AB55', '#000000', '#FFFFFF', '#FFC0CB', '#FF4842', '#1890FF', '#94D82D', '#FFC107'],
+                'sale',
+                Timestamp.now()
+            )
+            const ref = doc(db, "products", faker.datatype.uuid()).withConverter(productConverter);
+            await setDoc(ref, productData)
+                .then(() => console.log("Product added!"))
+                .catch((error) => console.error(error))
+
+             */
+            console.log(data.productImage)
             console.log(data);
         } catch (error) {
             console.error(error.message);
