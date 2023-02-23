@@ -13,7 +13,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
 import { styled, alpha } from '@mui/material/styles';
-import { Container, Stack, Typography, InputAdornment, Toolbar, Button, OutlinedInput, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Container, Stack, Typography, InputAdornment, Toolbar, Button, OutlinedInput, Dialog, DialogTitle, DialogContent, DialogActions, Box } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 import SearchIcon from '@mui/icons-material/Search';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
@@ -192,7 +192,7 @@ export function NewProductDialog({ open, onClose }) {
                 }, 200))
                 .then(() => setTimeout(() => {
                     closeSnackbar()
-                },2000))
+                }, 2000))
 
         } catch (error) {
             enqueueSnackbar(error.message, { variant: 'error' });
@@ -336,6 +336,10 @@ export function EditProductDialog({ open, onClose, product }) {
         setValue('productImage', filtered);
     };
 
+    const handleDeleteProduct = () => {
+        console.log('delete product will be added soon!');
+    }
+
     return (
         <FormProvider methods={methods}>
             <Dialog fullWidth open={open} onClose={onClose}>
@@ -354,18 +358,27 @@ export function EditProductDialog({ open, onClose, product }) {
                         <RHFTextField fullWidth name="productAmount" label="Amount" />
                     </Stack>
                 </DialogContent>
-                <DialogActions sx={{ mb: 2, mx: 2 }}>
-                    <Button variant="outlined" color="inherit" onClick={onClose}>Close</Button>
-                    <LoadingButton
-                        type="submit"
-                        variant="contained"
-                        color="primary"
-                        loading={isSubmitSuccessful || isSubmitting}
-                        onClick={handleSubmit(onSubmit)}
-                    >
-                        Create
-                    </LoadingButton>
-                </DialogActions>
+                <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    spacing={2}
+                    sx={{ mb: 2.5, mx: 3 }}
+                >
+                    <Button variant="contained" color="error" onClick={handleDeleteProduct}>Delete</Button>
+                    <Stack direction="row" spacing={1}>
+                        <Button variant="outlined" color="inherit" onClick={onClose}>Close</Button>
+                        <LoadingButton
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                            loading={isSubmitSuccessful || isSubmitting}
+                            onClick={handleSubmit(onSubmit)}
+                        >
+                            Create
+                        </LoadingButton>
+                    </Stack>
+                </Stack>
             </Dialog>
         </FormProvider>
     )
