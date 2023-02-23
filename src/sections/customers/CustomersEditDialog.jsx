@@ -16,18 +16,19 @@ import FormProvider, { RHFTextField } from '../../components/hook-form';
 
 // ----------------------------------------------------------------------
 
-CustomersNewDialog.propTypes = {
+CustomersEditDialog.propTypes = {
     open: PropTypes.bool,
-    onClose: PropTypes.func
+    onClose: PropTypes.func,
+    customer: PropTypes.object
 };
 
 // ----------------------------------------------------------------------
 
-export default function CustomersNewDialog({ open, onClose }) {
+export default function CustomersEditDialog({ open, onClose, customer }) {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-    const app = initializeApp(FIREBASE_API);
-    const db = getFirestore(app);
+    // const app = initializeApp(FIREBASE_API);
+    // const db = getFirestore(app);
 
     const NewCustomerSchema = Yup.object().shape({
         customerFirstName: Yup.string().required('First name is required'),
@@ -37,10 +38,10 @@ export default function CustomersNewDialog({ open, onClose }) {
     });
 
     const defaultValues = {
-        customerFirstName: '',
-        customerLastName: '',
-        customerEmail: '',
-        customerAddress: ''
+        customerFirstName: customer?.firstName || '',
+        customerLastName: customer?.lastName || '',
+        customerEmail: customer?.email || '',
+        customerAddress: customer?.address || ''
     }
 
     const methods = useForm({
@@ -51,7 +52,6 @@ export default function CustomersNewDialog({ open, onClose }) {
     const {
         reset,
         setError,
-        setValue,
         handleSubmit,
         formState: { isSubmitting, isSubmitSuccessful }
     } = methods;
@@ -66,14 +66,16 @@ export default function CustomersNewDialog({ open, onClose }) {
                 customerAddress
             } = data;
 
-            await setDoc(doc(db, "customers", `${customerEmail}`), {
-                firstName: customerFirstName,
-                lastName: customerLastName,
-                email: customerEmail,
-                address: customerAddress
-            });
+            // Add logic for updating customer to Firebase below!
 
-            enqueueSnackbar('Created customer successfully', { variant: 'success' })
+            // await setDoc(doc(db, "customers", `${customerEmail}`), {
+            //     firstName: customerFirstName,
+            //     lastName: customerLastName,
+            //     email: customerEmail,
+            //     address: customerAddress
+            // });
+
+            enqueueSnackbar('Editted successfully', { variant: 'success' })
             setTimeout(() => {
                 closeSnackbar();
             }, 5000)
@@ -82,7 +84,7 @@ export default function CustomersNewDialog({ open, onClose }) {
             setTimeout(() => {
                 reset(defaultValues);
             }, 200);
-
+            
         } catch (error) {
             enqueueSnackbar(error.message, { variant: 'error' });
             setTimeout(() => {
@@ -99,7 +101,7 @@ export default function CustomersNewDialog({ open, onClose }) {
         <FormProvider methods={methods}>
             <Dialog fullWidth open={open} onClose={onClose}>
                 <DialogTitle>
-                    New Customer
+                    Edit Customer
                 </DialogTitle>
                 <DialogContent>
                     <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
@@ -122,7 +124,7 @@ export default function CustomersNewDialog({ open, onClose }) {
                         loading={isSubmitSuccessful || isSubmitting}
                         onClick={handleSubmit(onSubmit)}
                     >
-                        Create
+                        Edit
                     </LoadingButton>
                 </DialogActions>
             </Dialog>

@@ -30,7 +30,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Label from '../components/label';
 import Scrollbar from "../components/scrollbar";
 // sections
-import { CustomersListHead, CustomersListToolbar, CustomersNewDialog } from '../sections/customers';
+import { CustomersListHead, CustomersListToolbar, CustomersNewDialog, CustomersEditDialog, CustomersDeleteDialog } from '../sections/customers';
 // mock
 import CUSTOMERS_LIST from '../_mock/customers';
 
@@ -150,7 +150,20 @@ export default function CustomersPage() {
 
     const isNotFound = !filteredUsers.length && !!filterName;
 
+    // Create/Edit/Delete customer dialogs
     const [openNewCustomerDialog, setOpenNewCustomerDialog] = useState(false);
+    const [openEditCustomerDialog, setOpenEditCustomerDialog] = useState(false);
+    const [openDeleteCustomerDialog, setOpenDeleteCustomerDialog] = useState(false);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+    const handleOpenEditCustomerDialog = () => {
+        // Set selected customer here
+        setOpenEditCustomerDialog(true);
+    };
+
+    const handleOpenDeleteCustomerDialog = () => {
+        setOpenDeleteCustomerDialog(true);
+    };
 
     return (
         <>
@@ -284,18 +297,20 @@ export default function CustomersPage() {
                     },
                 }}
             >
-                <MenuItem>
+                <MenuItem onClick={handleOpenEditCustomerDialog}>
                     <EditIcon sx={{ mr: 2 }} />
                     Edit
                 </MenuItem>
 
-                <MenuItem sx={{ color: 'error.main' }}>
+                <MenuItem sx={{ color: 'error.main' }} onClick={handleOpenDeleteCustomerDialog}>
                     <DeleteIcon sx={{ mr: 2 }} />
                     Delete
                 </MenuItem>
             </Popover>
 
             <CustomersNewDialog open={openNewCustomerDialog} onClose={() => setOpenNewCustomerDialog(false)} />
+            <CustomersEditDialog open={openEditCustomerDialog} onClose={() => setOpenEditCustomerDialog(false)} customer={selectedCustomer} />
+            <CustomersDeleteDialog open={openDeleteCustomerDialog} onClose={() => setOpenDeleteCustomerDialog(false)} customer={selectedCustomer} />
         </>
     )
 }
