@@ -131,7 +131,7 @@ NewProductDialog.propTypes = {
 };
 
 export function NewProductDialog({ open, onClose }) {
-    const { enqueueSnackbar, closeSnackbar } = useSnackbar()
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
     const app = initializeApp(FIREBASE_API);
     const db = getFirestore(app);
@@ -186,7 +186,7 @@ export function NewProductDialog({ open, onClose }) {
             const storageRef = ref(storage, `products/${productName}.${fileExtension}`);
             uploadBytes(storageRef, productImage)
                 .then(() => onClose())
-                .then(() => enqueueSnackbar('Product added successfully', { variant: 'success' }))
+                .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))
                 .then(() => setTimeout(() => {
                     reset(defaultValues)
                 }, 200))
@@ -195,7 +195,10 @@ export function NewProductDialog({ open, onClose }) {
                 },2000))
 
         } catch (error) {
-            console.error(error.message);
+            enqueueSnackbar(error.message, { variant: 'error' });
+            setTimeout(() => {
+                closeSnackbar();
+            }, 5000);
             setError('afterSubmit', {
                 ...error,
                 message: error.message

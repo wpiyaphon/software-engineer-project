@@ -166,7 +166,6 @@ export default function CustomersPage() {
                     <Button variant="contained" size="large" startIcon={<AddRoundedIcon />} onClick={() => setOpenNewCustomerDialog(true)}>
                         New Customer
                     </Button>
-                    <CustomersNewDialog open={openNewCustomerDialog} onClose={() => setOpenNewCustomerDialog(false)} />
                 </Stack>
 
                 <Card>
@@ -295,6 +294,8 @@ export default function CustomersPage() {
                     Delete
                 </MenuItem>
             </Popover>
+
+            <CustomersNewDialog open={openNewCustomerDialog} onClose={() => setOpenNewCustomerDialog(false)} />
         </>
     )
 }
