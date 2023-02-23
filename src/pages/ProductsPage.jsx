@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { useState, useCallback, useEffect } from "react";
-import PropTypes, { number } from 'prop-types';
+import PropTypes from 'prop-types';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
 // firebase

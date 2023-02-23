@@ -30,7 +30,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Label from '../components/label';
 import Scrollbar from "../components/scrollbar";
 // sections
-import { CustomersListHead, CustomersListToolbar } from '../sections/customers';
+import { CustomersListHead, CustomersListToolbar, CustomersNewDialog } from '../sections/customers';
 // mock
 import CUSTOMERS_LIST from '../_mock/customers';
 
@@ -150,6 +150,8 @@ export default function CustomersPage() {
 
     const isNotFound = !filteredUsers.length && !!filterName;
 
+    const [openNewCustomerDialog, setOpenNewCustomerDialog] = useState(false);
+
     return (
         <>
             <Helmet>
@@ -164,6 +166,7 @@ export default function CustomersPage() {
                     <Button variant="contained" size="large" startIcon={<AddRoundedIcon />}>
                         New Customer
                     </Button>
+                    <CustomersNewDialog open={openNewCustomerDialog} onClose={() => setOpenNewCustomerDialog(false)} />
                 </Stack>
 
                 <Card>
