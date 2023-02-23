@@ -163,7 +163,7 @@ export default function CustomersPage() {
                     <Typography variant="h4" gutterBottom>
                         Customers
                     </Typography>
-                    <Button variant="contained" size="large" startIcon={<AddRoundedIcon />}>
+                    <Button variant="contained" size="large" startIcon={<AddRoundedIcon />} onClick={() => setOpenNewCustomerDialog(true)}>
                         New Customer
                     </Button>
                     <CustomersNewDialog open={openNewCustomerDialog} onClose={() => setOpenNewCustomerDialog(false)} />
