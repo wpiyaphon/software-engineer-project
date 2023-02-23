@@ -61,7 +61,7 @@ export default function Nav({ openNav, onCloseNav }) {
 
                     <Box sx={{ ml: 2 }}>
                         <Typography variant="subtitle2" sx={{ color: 'text.primary' }}>
-                            {user.firstName} {user.lastName}
+                            {user.firstName} {user.lastName.slice(0, 1)}.
                         </Typography>
 
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>

@@ -23,6 +23,7 @@
     "firebase": "^9.17.1",
     "framer-motion": "^9.0.4",
     "lodash": "^4.17.21",
+    "notistack": "^2.0.8",
     "numeral": "^2.0.6",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",

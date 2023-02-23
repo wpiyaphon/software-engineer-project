@@ -1,7 +1,13 @@
 import { Helmet } from "react-helmet-async";
 import { useState, useCallback, useEffect } from "react";
-import PropTypes from 'prop-types';
+import PropTypes, { number } from 'prop-types';
 import * as Yup from 'yup';
+import { useSnackbar } from 'notistack'
+// firebase
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes } from "firebase/storage";
+import { FIREBASE_API } from "../config";
 // form
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -113,23 +119,36 @@ export default function ProductsPage() {
 
 // ----------------------------------------------------------------------
 
+const MAX_FILE_SIZE = 2 * 1000 * 1000; // 2 Mb
+
+const FILE_FORMATS = ['image/jpg', 'image/jpeg', 'image/gif', 'image/png'];
+
+// ----------------------------------------------------------------------
+
 NewProductDialog.propTypes = {
     open: PropTypes.bool,
     onClose: PropTypes.func
 };
 
 export function NewProductDialog({ open, onClose }) {
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar()
+
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
 
     const NewProductSchema = Yup.object().shape({
-        productImage: Yup.string().required('Product image is required'),
+        productImage: Yup.mixed()
+            .test('required', "Product image is required", (value) => value !== '')
+            .test('fileSize', 'The file is too large', (file) => file && file.size <= MAX_FILE_SIZE)
+            .test('fileFormat', 'Unsupported Format', (file) => file && FILE_FORMATS.includes(file.type)),
         productName: Yup.string().required('Product name is required'),
-        productAmount: Yup.string().required('Product amount is required')
+        productAmount: Yup.number().typeError('Must be a number').min(1, 'Product amount must be greater than 0').required('Product amount is required')
     });
 
     const defaultValues = {
         productImage: '',
         productName: '',
-        productAmount: ''
+        productAmount: 0
     }
 
     const methods = useForm({
@@ -150,7 +169,31 @@ export function NewProductDialog({ open, onClose }) {
 
     const onSubmit = async (data) => {
         try {
-            console.log(data);
+
+            const {
+                productImage,
+                productName,
+                productAmount
+            } = data;
+
+            await setDoc(doc(db, "products", productName), {
+                name: productName,
+                amount: productAmount
+            });
+
+            const storage = getStorage();
+            const fileExtension = productImage.name.split('.').pop();
+            const storageRef = ref(storage, `products/${productName}.${fileExtension}`);
+            uploadBytes(storageRef, productImage)
+                .then(() => onClose())
+                .then(() => enqueueSnackbar('Product added successfully', { variant: 'success' }))
+                .then(() => setTimeout(() => {
+                    reset(defaultValues)
+                }, 200))
+                .then(() => setTimeout(() => {
+                    closeSnackbar()
+                },2000))
+
         } catch (error) {
             console.error(error.message);
             setError('afterSubmit', {
