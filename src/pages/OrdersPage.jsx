@@ -31,6 +31,7 @@ import Label from '../components/label';
 import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar } from '../sections/customers';
+import { OrderNewDialog } from '../sections/orders';
 // mock
 import CUSTOMERS_LIST from '../_mock/customers';
 
@@ -149,6 +150,9 @@ export default function CustomersPage() {
 
     const isNotFound = !filteredUsers.length && !!filterName;
 
+    // Dialogs
+    const [openNewOrderDialog, setOpenNewOrderDialog] = useState(false);
+
     return (
         <>
             <Helmet>
@@ -160,7 +164,7 @@ export default function CustomersPage() {
                     <Typography variant="h4" gutterBottom>
                         Orders
                     </Typography>
-                    <Button variant="contained" size="large" startIcon={<AddRoundedIcon />}>
+                    <Button variant="contained" size="large" startIcon={<AddRoundedIcon />} onClick={() => setOpenNewOrderDialog(true)}>
                         New Order
                     </Button>
                 </Stack>
@@ -291,6 +295,8 @@ export default function CustomersPage() {
                     Delete
                 </MenuItem>
             </Popover>
+
+            <OrderNewDialog open={openNewOrderDialog} onClose={() => setOpenNewOrderDialog(false)} />
         </>
     )
 }
