@@ -31,7 +31,7 @@ import Label from '../components/label';
 import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar } from '../sections/customers';
-import { OrderNewDialog } from '../sections/orders';
+import { OrderNewDialog, OrderDeleteDialog, OrderEditDialog, OrderDetailDialog } from '../sections/orders';
 // mock
 import CUSTOMERS_LIST from '../_mock/customers';
 
@@ -150,8 +150,32 @@ export default function CustomersPage() {
 
     const isNotFound = !filteredUsers.length && !!filterName;
 
-    // Dialogs
+    // Create/Edit/Delete order dialogs
     const [openNewOrderDialog, setOpenNewOrderDialog] = useState(false);
+    const [openDetailOrderDialog, setOpenDetailOrderDialog] = useState(false);
+    const [openEditOrderDialog, setOpenEditOrderDialog] = useState(false);
+    const [openDeleteOrderDialog, setOpenDeleteOrderDialog] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+
+    const handleOpenDetailOrderDialog = () => {
+        // setSelectedOrder
+        setOpenDetailOrderDialog(true);
+    }
+
+    const handleOpenDeleteOrderDialog = () => {
+        // setSelectedOrder
+        setOpenDeleteOrderDialog(true);
+    };
+
+    const handleOpenEditOrderDialog = () => {
+        // setSelectedOrder
+        setOpenEditOrderDialog(true);
+    };
+
+    const handleCloseDialog = (setDialog) => {
+        // Set selected customer to be empty object here
+        setDialog(false);
+    };
 
     return (
         <>
@@ -195,7 +219,7 @@ export default function CustomersPage() {
                                                     <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
                                                 </TableCell>
 
-                                                <TableCell component="th" scope="row" padding="none">
+                                                <TableCell component="th" scope="row" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>
                                                     <Stack direction="row" alignItems="center" spacing={2}>
                                                         <Typography variant="subtitle2" noWrap>
                                                             {name}
@@ -203,15 +227,11 @@ export default function CustomersPage() {
                                                     </Stack>
                                                 </TableCell>
 
-                                                <TableCell align="left">{role}</TableCell>
+                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{role}</TableCell> 
 
-                                                <TableCell align="left">{company}</TableCell>
+                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{company}</TableCell>
 
-                                                <TableCell align="left">{isVerified ? 'Yes' : 'No'}</TableCell>
-
-                                                {/* <TableCell align="left">
-                                                    <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
-                                                </TableCell> */}
+                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{isVerified ? 'Yes' : 'No'}</TableCell>
 
                                                 <TableCell align="right">
                                                     <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
@@ -285,18 +305,21 @@ export default function CustomersPage() {
                     },
                 }}
             >
-                <MenuItem>
+                <MenuItem onClick={handleOpenEditOrderDialog}>
                     <EditIcon sx={{ mr: 2 }} />
                     Edit
                 </MenuItem>
 
-                <MenuItem sx={{ color: 'error.main' }}>
+                <MenuItem sx={{ color: 'error.main' }} onClick={handleOpenDeleteOrderDialog}>
                     <DeleteIcon sx={{ mr: 2 }} />
                     Delete
                 </MenuItem>
             </Popover>
 
             <OrderNewDialog open={openNewOrderDialog} onClose={() => setOpenNewOrderDialog(false)} />
+            <OrderDeleteDialog open={openDeleteOrderDialog} onClose={() => setOpenDeleteOrderDialog(false)} />
+            <OrderEditDialog open={openEditOrderDialog} onClose={() => setOpenEditOrderDialog(false)} />
+            <OrderDetailDialog open={openDetailOrderDialog} onClose={() => setOpenDetailOrderDialog(false)} />
         </>
     )
 }

@@ -143,12 +143,7 @@ export default function Upload({
                 Remove all
               </Button>
             )}
-
-            {/* {onUpload && (
-              <Button size="small" variant="contained" onClick={onUpload}>
-                Upload files
-              </Button>
-            )} */}
+            
           </Stack>
         </>
       )}

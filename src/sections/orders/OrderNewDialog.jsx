@@ -46,7 +46,7 @@ export default function OrderNewDialog({ open, onClose }) {
         { email: 'hong@hotmail.com', firstName: 'Piyaphon', lastName: 'Wu', address: '103 Fake Street' },
         { email: 'kaung@hotmail.com', firstName: 'Kaung', lastName: 'Thu', address: '102 Fake Street' },
         { email: 'tar@hotmail.com', firstName: 'Thanatuch', lastName: 'Lertritsirikul', address: '101 Fake Street' },
-    ]
+    ];
 
     const NewOrderSchema = Yup.object().shape({
         receiptImage: Yup.mixed()
