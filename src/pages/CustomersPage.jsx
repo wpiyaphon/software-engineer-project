@@ -30,7 +30,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Label from '../components/label';
 import Scrollbar from "../components/scrollbar";
 // sections
-import { CustomersListHead, CustomersListToolbar, CustomersNewDialog, CustomersEditDialog, CustomersDeleteDialog } from '../sections/customers';
+import { CustomersListHead, CustomersListToolbar, CustomersNewDialog, CustomersDetailDialog, CustomersEditDialog, CustomersDeleteDialog } from '../sections/customers';
 // mock
 import CUSTOMERS_LIST from '../_mock/customers';
 
@@ -152,6 +152,7 @@ export default function CustomersPage() {
 
     // Create/Edit/Delete customer dialogs
     const [openNewCustomerDialog, setOpenNewCustomerDialog] = useState(false);
+    const [openDetailCustomerDialog, setOpenDetailCustomerDialog] = useState(false);
     const [openEditCustomerDialog, setOpenEditCustomerDialog] = useState(false);
     const [openDeleteCustomerDialog, setOpenDeleteCustomerDialog] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -163,6 +164,15 @@ export default function CustomersPage() {
 
     const handleOpenDeleteCustomerDialog = () => {
         setOpenDeleteCustomerDialog(true);
+    };
+
+    const handleOpenDetailCustomerDialog = () => {
+        setOpenDetailCustomerDialog(true);
+    };
+
+    const handleCloseDialog = (setDialog) => {
+        // Set selected customer to be empty object here
+        setDialog(false);
     };
 
     return (
@@ -207,7 +217,7 @@ export default function CustomersPage() {
                                                     <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
                                                 </TableCell>
 
-                                                <TableCell component="th" scope="row" padding="none">
+                                                <TableCell component="th" scope="row" padding="none" onClick={handleOpenDetailCustomerDialog} sx={{ cursor: 'pointer' }}>
                                                     <Stack direction="row" alignItems="center" spacing={2}>
                                                         <Typography variant="subtitle2" noWrap>
                                                             {name}
@@ -215,13 +225,13 @@ export default function CustomersPage() {
                                                     </Stack>
                                                 </TableCell>
 
-                                                <TableCell align="left">{company}</TableCell>
+                                                <TableCell align="left" onClick={handleOpenDetailCustomerDialog} sx={{ cursor: 'pointer' }}>{company}</TableCell>
 
-                                                <TableCell align="left">{role}</TableCell>
+                                                <TableCell align="left" onClick={handleOpenDetailCustomerDialog} sx={{ cursor: 'pointer' }}>{role}</TableCell>
 
-                                                <TableCell align="left">{isVerified ? 'Yes' : 'No'}</TableCell>
+                                                <TableCell align="left" onClick={handleOpenDetailCustomerDialog} sx={{ cursor: 'pointer' }}>{isVerified ? 'Yes' : 'No'}</TableCell>
 
-                                                <TableCell align="left">
+                                                <TableCell align="left" onClick={handleOpenDetailCustomerDialog} sx={{ cursor: 'pointer' }}>
                                                     <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
                                                 </TableCell>
 
@@ -309,8 +319,9 @@ export default function CustomersPage() {
             </Popover>
 
             <CustomersNewDialog open={openNewCustomerDialog} onClose={() => setOpenNewCustomerDialog(false)} />
-            <CustomersEditDialog open={openEditCustomerDialog} onClose={() => setOpenEditCustomerDialog(false)} customer={selectedCustomer} />
-            <CustomersDeleteDialog open={openDeleteCustomerDialog} onClose={() => setOpenDeleteCustomerDialog(false)} customer={selectedCustomer} />
+            <CustomersDetailDialog open={openDetailCustomerDialog} onClose={() => handleCloseDialog(setOpenDetailCustomerDialog)} customer={selectedCustomer} />
+            <CustomersEditDialog open={openEditCustomerDialog} onClose={() => handleCloseDialog(setOpenEditCustomerDialog)} customer={selectedCustomer} />
+            <CustomersDeleteDialog open={openDeleteCustomerDialog} onClose={() => handleCloseDialog(setOpenDeleteCustomerDialog)} customer={selectedCustomer} />
         </>
     )
 }
