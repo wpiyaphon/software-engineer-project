@@ -27,10 +27,12 @@ CustomersEditDialog.propTypes = {
 export default function CustomersEditDialog({ open, onClose, customer }) {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-    // const app = initializeApp(FIREBASE_API);
-    // const db = getFirestore(app);
+     const app = initializeApp(FIREBASE_API);
+     const db = getFirestore(app);
 
-    const NewCustomerSchema = Yup.object().shape({
+
+
+    const EditCustomerSchema = Yup.object().shape({
         customerFirstName: Yup.string().required('First name is required'),
         customerLastName: Yup.string().required('Last name is required'),
         customerEmail: Yup.string().email().required('Email is required'),
@@ -43,9 +45,8 @@ export default function CustomersEditDialog({ open, onClose, customer }) {
         customerEmail: customer?.email || '',
         customerAddress: customer?.address || ''
     }
-
     const methods = useForm({
-        resolver: yupResolver(NewCustomerSchema),
+        resolver: yupResolver(EditCustomerSchema),
         defaultValues
     });
 
@@ -68,14 +69,19 @@ export default function CustomersEditDialog({ open, onClose, customer }) {
 
             // Add logic for updating customer to Firebase below!
 
-            // await setDoc(doc(db, "customers", `${customerEmail}`), {
-            //     firstName: customerFirstName,
-            //     lastName: customerLastName,
-            //     email: customerEmail,
-            //     address: customerAddress
-            // });
+            await setDoc(doc(db, "customers", `${customer.email}`), {
+                name: customerFirstName + " " + customerLastName,
+                firstName: customerFirstName,
+                lastName: customerLastName,
+                email: customerEmail,
+                address: customerAddress,
+                company: "Microsoft",
+                isVerified: true,
+                role: "Full Stack Developer",
+                status: "active"
+            });
 
-            enqueueSnackbar('Editted successfully', { variant: 'success' })
+            enqueueSnackbar('Edited successfully', { variant: 'success' })
             setTimeout(() => {
                 closeSnackbar();
             }, 5000)
@@ -97,9 +103,15 @@ export default function CustomersEditDialog({ open, onClose, customer }) {
         }
     }
 
+    const handleClose = () => {
+        onClose();
+        setTimeout(() => {
+        }, 200)
+    }
+
     return (
         <FormProvider methods={methods}>
-            <Dialog fullWidth open={open} onClose={onClose}>
+            <Dialog fullWidth open={open} onClose={handleClose}>
                 <DialogTitle>
                     Edit Customer
                 </DialogTitle>
@@ -116,7 +128,7 @@ export default function CustomersEditDialog({ open, onClose, customer }) {
                     </Stack>
                 </DialogContent>
                 <DialogActions sx={{ mb: 2, mx: 2 }}>
-                    <Button variant="outlined" color="inherit" onClick={onClose}>Close</Button>
+                    <Button variant="outlined" color="inherit" onClick={handleClose}>Close</Button>
                     <LoadingButton
                         type="submit"
                         variant="contained"

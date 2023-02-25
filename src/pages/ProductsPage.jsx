@@ -5,7 +5,7 @@ import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
 // firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import {getFirestore, doc, addDoc, setDoc, query, collection, onSnapshot, Timestamp, deleteDoc} from "firebase/firestore";
 import { getStorage, ref, uploadBytes } from "firebase/storage";
 import { FIREBASE_API } from "../config";
 // form
@@ -22,7 +22,7 @@ import FormProvider, { RHFTextField, RHFUpload } from '../components/hook-form';
 // sections
 import { ProductList } from '../sections/products';
 // mock
-import PRODUCTS from '../_mock/products';
+import {orderBy} from "lodash/collection.js";
 
 // ----------------------------------------------------------------------
 
@@ -80,6 +80,21 @@ export default function ProductsPage() {
         }, 200)
     }
 
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
+
+    const [products, setProducts] = useState([])
+
+    useEffect(()=> {
+        const q = query(collection(db, "products"),  orderBy("name", "desc"));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setProducts(snapshot.docs.map(doc => ({...doc.data(), id: doc.id})))
+        });
+
+        return () => unsubscribe()
+    }, [])
+
     return (
         <>
             <Helmet>
@@ -107,7 +122,7 @@ export default function ProductsPage() {
                         <AddRoundedIcon /> New Product
                     </Button>
                 </StyledRoot>
-                <ProductList products={PRODUCTS} onEdit={handleSelect} />
+                <ProductList products={products} onEdit={handleSelect} />
             </Container>
             <NewProductDialog open={openNewProductDialog} onClose={() => setOpenNewProductDialog(false)} />
             {Object.keys(selectedProduct).length !== 0 && (
@@ -168,37 +183,68 @@ export function NewProductDialog({ open, onClose }) {
     const values = watch();
 
     const onSubmit = async (data) => {
+        console.log('clicked onSubmit')
         try {
-
             const {
                 productImage,
                 productName,
                 productAmount
             } = data;
 
-            await setDoc(doc(db, "products", productName), {
-                name: productName,
-                amount: productAmount
-            });
-
             const storage = getStorage();
             const fileExtension = productImage.name.split('.').pop();
             const storageRef = ref(storage, `products/${productName}.${fileExtension}`);
+
+            const [imgURL, setImgURL] = useState("/assets/images/products/product_4.jpg");
+
             uploadBytes(storageRef, productImage)
-                .then(() => onClose())
-                .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))
-                .then(() => setTimeout(() => {
+
+            getDownloadURL(storageRef)
+                .then((url) => {
+                    console.log(url)
+                    setImgURL(url)
+                })
+                .catch((error) => {
+                    enqueueSnackbar(error.message, { variant: 'error' });
+                    setTimeout(() => {
+                        closeSnackbar();
+                    }, 5000);
+                    setError('afterSubmit', {
+                        ...error,
+                        message: error.message
+                    });
+                });
+
+            await addDoc(collection(db, "products"), {
+                name: productName,
+                description: "Placeholder",
+                cover: imgURL,
+                addedOn: Timestamp.now(),
+                variations: [
+                    {
+                        name: "classic",
+                        price: productAmount,
+                        stock: 4
+                    },
+                    {
+                        name: "deluxe",
+                        price: productAmount+100,
+                        stock: 6
+                    }
+                ]
+            })
+            .then(() => onClose())
+            .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))
+            .then(() => setTimeout(() => {
                     reset(defaultValues)
                 }, 200))
-                .then(() => setTimeout(() => {
+            .then(() => setTimeout(() => {
                     closeSnackbar()
                 }, 2000))
+            
 
         } catch (error) {
-            enqueueSnackbar(error.message, { variant: 'error' });
-            setTimeout(() => {
-                closeSnackbar();
-            }, 5000);
+            console.error(error.message);
             setError('afterSubmit', {
                 ...error,
                 message: error.message
@@ -277,16 +323,21 @@ EditProductDialog.propTypes = {
 
 export function EditProductDialog({ open, onClose, product }) {
 
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
+
     const EditProductDialog = Yup.object().shape({
         productImage: Yup.string().required('Product image is required'),
         productName: Yup.string().required('Product name is required'),
-        productAmount: Yup.string().required('Product amount is required')
+        productAmount: Yup.number().required('Product amount is required')
     });
 
     const defaultValues = {
         productImage: product?.cover || '',
         productName: product?.name || '',
-        productAmount: '0'
+        productAmount: product?.variations[0].price || 0
     }
 
     const methods = useForm({
@@ -307,7 +358,31 @@ export function EditProductDialog({ open, onClose, product }) {
 
     const onSubmit = async (data) => {
         try {
-            console.log(data);
+            const {
+                productName,
+                productAmount
+            } = data;
+
+            const randomNumber = Math.floor(Math.random() * 10) + 1
+
+            await setDoc(doc(db, "products", product.id), {
+                name: productName,
+                description: "Placeholder",
+                cover: "/assets/images/products/product_" + randomNumber + ".jpg",
+                addedOn: Timestamp.now(),
+                variations: [
+                    {
+                        name: "classic",
+                        price: productAmount,
+                        stock: 4
+                    },
+                    {
+                        name: "deluxe",
+                        price: productAmount+100,
+                        stock: 6
+                    }
+                ]
+            });
         } catch (error) {
             console.error(error.message);
             setError('afterSubmit', {
@@ -336,15 +411,40 @@ export function EditProductDialog({ open, onClose, product }) {
         setValue('productImage', filtered);
     };
 
-    const handleDeleteProduct = () => {
-        console.log('delete product will be added soon!');
+    const handleDeleteProduct = async () => {
+        try {
+
+            await deleteDoc(doc(db, "products", product.id));
+
+            enqueueSnackbar('Successfully deleted the product', { variant: 'success' })
+            setTimeout(() => {
+                closeSnackbar();
+            }, 5000);
+            onClose();
+
+        } catch (error) {
+            enqueueSnackbar(error.message, { variant: 'error' });
+            setTimeout(() => {
+                closeSnackbar();
+            }, 5000);
+            setError('afterSubmit', {
+                ...error,
+                message: error.message
+            });
+        }
+    }
+
+    const handleClose = () => {
+        onClose();
+        setTimeout(() => {
+        }, 200)
     }
 
     return (
         <FormProvider methods={methods}>
-            <Dialog fullWidth open={open} onClose={onClose}>
+            <Dialog fullWidth open={open} onClose={handleClose}>
                 <DialogTitle>
-                    New Product
+                    Edit Product
                 </DialogTitle>
                 <DialogContent>
                     <RHFUpload
@@ -367,7 +467,7 @@ export function EditProductDialog({ open, onClose, product }) {
                 >
                     <Button variant="contained" color="error" onClick={handleDeleteProduct}>Delete</Button>
                     <Stack direction="row" spacing={1}>
-                        <Button variant="outlined" color="inherit" onClick={onClose}>Close</Button>
+                        <Button variant="outlined" color="inherit" onClick={handleClose}>Close</Button>
                         <LoadingButton
                             type="submit"
                             variant="contained"
@@ -375,7 +475,7 @@ export function EditProductDialog({ open, onClose, product }) {
                             loading={isSubmitSuccessful || isSubmitting}
                             onClick={handleSubmit(onSubmit)}
                         >
-                            Create
+                            Edit
                         </LoadingButton>
                     </Stack>
                 </Stack>

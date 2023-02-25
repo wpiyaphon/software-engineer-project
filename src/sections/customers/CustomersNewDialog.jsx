@@ -3,7 +3,7 @@ import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
 // firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import {getFirestore, doc, setDoc, addDoc, collection} from "firebase/firestore";
 import { FIREBASE_API } from "../../config";
 // form
 import { useForm } from 'react-hook-form';
@@ -66,11 +66,16 @@ export default function CustomersNewDialog({ open, onClose }) {
                 customerAddress
             } = data;
 
-            await setDoc(doc(db, "customers", `${customerEmail}`), {
+            await addDoc(collection(db, "customers"), {
+                name: customerFirstName + " " + customerLastName,
                 firstName: customerFirstName,
                 lastName: customerLastName,
                 email: customerEmail,
-                address: customerAddress
+                address: customerAddress,
+                company: "Microsoft",
+                isVerified: true,
+                role: "Full Stack Developer",
+                status: "active"
             });
 
             enqueueSnackbar('Created customer successfully', { variant: 'success' })
