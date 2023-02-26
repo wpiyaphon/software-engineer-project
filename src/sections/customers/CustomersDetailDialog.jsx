@@ -35,6 +35,12 @@ export default function CustomersDetailDialog({ open, onClose, customer }) {
         }
     ];
 
+    const defaultValues = {
+        customerName: customer?.name || 'Dummy',
+        customerEmail: customer?.email || 'dummy@dummy.com',
+        customerAddress: customer?.address || 'Dummy place'
+    }
+
     // Add logic to get customer's orders here
 
     // Add logic to open receipt image on new Tab
@@ -45,17 +51,17 @@ export default function CustomersDetailDialog({ open, onClose, customer }) {
     return (
         <Dialog fullWidth open={open} onClose={onClose}>
             <DialogTitle>
-                Fake Dummy
+                {defaultValues.customerName}
             </DialogTitle>
             <DialogContent>
                 <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
                     <Typography>
-                        Email: Dummy@hotmail.com
+                        {defaultValues.customerEmail}
                     </Typography>
                 </Stack>
                 <Stack direction="row" spacing={2} sx={{ my: 2 }}>
                     <Typography>
-                        Address: 123 Fake Street, Fake City, Fake State
+                        {defaultValues.customerAddress}
                     </Typography>
                 </Stack>
                 <Scrollbar>

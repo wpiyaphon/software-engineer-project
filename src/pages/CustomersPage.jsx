@@ -234,7 +234,12 @@ export default function CustomersPage() {
                                                     <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
                                                 </TableCell>
 
-                                                <TableCell component="th" scope="row" padding="none" onClick={handleOpenDetailCustomerDialog} sx={{ cursor: 'pointer' }}>
+                                                <TableCell component="th" scope="row" padding="none" 
+                                                onClick={() => {
+                                                    handleOpenDetailCustomerDialog()
+                                                    setSelectedCustomer(row)
+                                                }} 
+                                                sx={{ cursor: 'pointer' }}>
                                                     <Stack direction="row" alignItems="center" spacing={2}>
                                                         <Typography variant="subtitle2" noWrap>
                                                             {name}
@@ -242,13 +247,33 @@ export default function CustomersPage() {
                                                     </Stack>
                                                 </TableCell>
 
-                                                <TableCell align="left" onClick={handleOpenDetailCustomerDialog} sx={{ cursor: 'pointer' }}>{company}</TableCell>
+                                                <TableCell align="left"
+                                                           onClick={() => {
+                                                               handleOpenDetailCustomerDialog()
+                                                               setSelectedCustomer(row)
+                                                           }}
+                                                           sx={{ cursor: 'pointer' }}>{company}</TableCell>
 
-                                                <TableCell align="left" onClick={handleOpenDetailCustomerDialog} sx={{ cursor: 'pointer' }}>{role}</TableCell>
+                                                <TableCell align="left" 
+                                                            onClick={() => {
+                                                                handleOpenDetailCustomerDialog()
+                                                                setSelectedCustomer(row)
+                                                            }}
+                                                            sx={{ cursor: 'pointer' }}>{role}</TableCell>
 
-                                                <TableCell align="left" onClick={handleOpenDetailCustomerDialog} sx={{ cursor: 'pointer' }}>{isVerified ? 'Yes' : 'No'}</TableCell>
+                                                <TableCell align="left" 
+                                                onClick={() => {
+                                                    handleOpenDetailCustomerDialog()
+                                                    setSelectedCustomer(row)
+                                                }}
+                                                sx={{ cursor: 'pointer' }}>{isVerified ? 'Yes' : 'No'}</TableCell>
 
-                                                <TableCell align="left" onClick={handleOpenDetailCustomerDialog} sx={{ cursor: 'pointer' }}>
+                                                <TableCell align="left" 
+                                                onClick={() => {
+                                                    handleOpenDetailCustomerDialog()
+                                                    setSelectedCustomer(row)
+                                                }} 
+                                                sx={{ cursor: 'pointer' }}>
                                                     <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
                                                 </TableCell>
 
