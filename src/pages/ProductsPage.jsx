@@ -6,7 +6,7 @@ import { useSnackbar } from 'notistack'
 // firebase
 import { initializeApp } from "firebase/app";
 import {getFirestore, doc, addDoc, setDoc, query, collection, onSnapshot, Timestamp, deleteDoc} from "firebase/firestore";
-import { getStorage, ref, uploadBytes } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FIREBASE_API } from "../config";
 // form
 import { useForm } from 'react-hook-form';
@@ -182,8 +182,7 @@ export function NewProductDialog({ open, onClose }) {
 
     const values = watch();
 
-    const onSubmit = async (data) => {
-        console.log('clicked onSubmit')
+    const onSubmit = (data) => {
         try {
             const {
                 productImage,
@@ -195,53 +194,58 @@ export function NewProductDialog({ open, onClose }) {
             const fileExtension = productImage.name.split('.').pop();
             const storageRef = ref(storage, `products/${productName}.${fileExtension}`);
 
-            const [imgURL, setImgURL] = useState("/assets/images/products/product_4.jpg");
+            let imgURL = "/assets/images/products/product_4.jpg";
 
             uploadBytes(storageRef, productImage)
+                .then(() => {
+                    getDownloadURL(storageRef)
+                        .then((url) => {
+                            console.log(url)
+                            imgURL = url
+                            addDoc(collection(db, "products"), {
+                                name: productName,
+                                description: "Placeholder",
+                                cover: imgURL,
+                                imageName: `products/${productName}.${fileExtension}`,
+                                addedOn: Timestamp.now(),
+                                variations: [
+                                    {
+                                        name: "classic",
+                                        price: productAmount,
+                                        stock: 4
+                                    },
+                                    {
+                                        name: "deluxe",
+                                        price: productAmount+100,
+                                        stock: 6
+                                    }
+                                ]
+                            })
+                                .then(() => onClose())
+                                .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))
+                                .then(() => setTimeout(() => {
+                                    reset(defaultValues)
+                                }, 200))
+                                .then(() => setTimeout(() => {
+                                    closeSnackbar()
+                                }, 2000))
+                        })
+                        .catch((error) => {
+                            console.log(error.message)
+                            enqueueSnackbar(error.message, { variant: 'error' });
 
-            getDownloadURL(storageRef)
-                .then((url) => {
-                    console.log(url)
-                    setImgURL(url)
+                            setTimeout(() => {
+                                closeSnackbar();
+                            }, 5000);
+
+                            setError('afterSubmit', {
+                                ...error,
+                                message: error.message
+                            });
+                        });
                 })
-                .catch((error) => {
-                    enqueueSnackbar(error.message, { variant: 'error' });
-                    setTimeout(() => {
-                        closeSnackbar();
-                    }, 5000);
-                    setError('afterSubmit', {
-                        ...error,
-                        message: error.message
-                    });
-                });
 
-            await addDoc(collection(db, "products"), {
-                name: productName,
-                description: "Placeholder",
-                cover: imgURL,
-                addedOn: Timestamp.now(),
-                variations: [
-                    {
-                        name: "classic",
-                        price: productAmount,
-                        stock: 4
-                    },
-                    {
-                        name: "deluxe",
-                        price: productAmount+100,
-                        stock: 6
-                    }
-                ]
-            })
-            .then(() => onClose())
-            .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))
-            .then(() => setTimeout(() => {
-                    reset(defaultValues)
-                }, 200))
-            .then(() => setTimeout(() => {
-                    closeSnackbar()
-                }, 2000))
-            
+
 
         } catch (error) {
             console.error(error.message);
@@ -363,12 +367,10 @@ export function EditProductDialog({ open, onClose, product }) {
                 productAmount
             } = data;
 
-            const randomNumber = Math.floor(Math.random() * 10) + 1
-
             await setDoc(doc(db, "products", product.id), {
                 name: productName,
                 description: "Placeholder",
-                cover: "/assets/images/products/product_" + randomNumber + ".jpg",
+                cover: product.cover,
                 addedOn: Timestamp.now(),
                 variations: [
                     {
@@ -382,7 +384,15 @@ export function EditProductDialog({ open, onClose, product }) {
                         stock: 6
                     }
                 ]
-            });
+            })
+                .then(() => onClose())
+                .then(() => enqueueSnackbar('Edited product successfully', { variant: 'success' }))
+                .then(() => setTimeout(() => {
+                    reset(defaultValues)
+                }, 200))
+                .then(() => setTimeout(() => {
+                    closeSnackbar()
+                }, 2000))
         } catch (error) {
             console.error(error.message);
             setError('afterSubmit', {
@@ -415,6 +425,13 @@ export function EditProductDialog({ open, onClose, product }) {
         try {
 
             await deleteDoc(doc(db, "products", product.id));
+
+            const storage = getStorage();
+            const storageRef = ref(storage, product.imageName);
+
+            deleteObject(storageRef)
+            .then(() => {console.log("Image successfully deleted")})
+            .catch((error) => {console.log(error.message)})
 
             enqueueSnackbar('Successfully deleted the product', { variant: 'success' })
             setTimeout(() => {
