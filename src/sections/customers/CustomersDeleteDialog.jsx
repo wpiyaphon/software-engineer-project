@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack'
 // firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { FIREBASE_API } from "../../config";
 // @mui
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
@@ -20,24 +20,15 @@ CustomersNewDialog.propTypes = {
 export default function CustomersNewDialog({ open, onClose, customer }) {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-    // const app = initializeApp(FIREBASE_API);
-    // const db = getFirestore(app);
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
 
-    const handleDelete = async (customer) => {
+    const handleDelete = async () => {
         try {
 
-            // Add logic for deleting customer in Firebase below!
+            await deleteDoc(doc(db, "customers", customer.id));
 
-            // await setDoc(doc(db, "customers", `${customerEmail}`), {
-            //     firstName: customerFirstName,
-            //     lastName: customerLastName,
-            //     email: customerEmail,
-            //     address: customerAddress
-            // });
-
-            console.log("deleting customer will be added soon!");
-
-            enqueueSnackbar('Successfully deteled the customer', { variant: 'success' })
+            enqueueSnackbar('Successfully deleted the customer', { variant: 'success' })
             setTimeout(() => {
                 closeSnackbar();
             }, 5000);

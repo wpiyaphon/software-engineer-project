@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 // @mui
@@ -32,7 +32,9 @@ import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar, CustomersNewDialog, CustomersDetailDialog, CustomersEditDialog, CustomersDeleteDialog } from '../sections/customers';
 // mock
-import CUSTOMERS_LIST from '../_mock/customers';
+import {initializeApp} from "firebase/app";
+import {FIREBASE_API} from "../config.jsx";
+import {collection, getFirestore, onSnapshot, query} from "firebase/firestore";
 
 // ----------------------------------------------------------------------
 
@@ -92,6 +94,21 @@ export default function CustomersPage() {
 
     const [rowsPerPage, setRowsPerPage] = useState(5);
 
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
+
+    const [customers, setCustomers] = useState([])
+
+    useEffect(()=> {
+        const q = query(collection(db, "customers"));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setCustomers(snapshot.docs.map(doc => ({...doc.data(), id: doc.id})))
+        });
+
+        return () => unsubscribe()
+    }, [])
+
     const handleOpenMenu = (event) => {
         setOpen(event.currentTarget);
     };
@@ -108,7 +125,7 @@ export default function CustomersPage() {
 
     const handleSelectAllClick = (event) => {
         if (event.target.checked) {
-            const newSelecteds = CUSTOMERS_LIST.map((n) => n.name);
+            const newSelecteds = customers.map((n) => n.name);
             setSelected(newSelecteds);
             return;
         }
@@ -144,9 +161,9 @@ export default function CustomersPage() {
         setFilterName(event.target.value);
     };
 
-    const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - CUSTOMERS_LIST.length) : 0;
+    const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - customers.length) : 0;
 
-    const filteredUsers = applySortFilter(CUSTOMERS_LIST, getComparator(order, orderBy), filterName);
+    const filteredUsers = applySortFilter(customers, getComparator(order, orderBy), filterName);
 
     const isNotFound = !filteredUsers.length && !!filterName;
 
@@ -201,7 +218,7 @@ export default function CustomersPage() {
                                     order={order}
                                     orderBy={orderBy}
                                     headLabel={TABLE_HEAD}
-                                    rowCount={CUSTOMERS_LIST.length}
+                                    rowCount={customers.length}
                                     numSelected={selected.length}
                                     onRequestSort={handleRequestSort}
                                     onSelectAllClick={handleSelectAllClick}
@@ -236,7 +253,11 @@ export default function CustomersPage() {
                                                 </TableCell>
 
                                                 <TableCell align="right">
-                                                    <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
+                                                    <IconButton size="large" color="inherit" onClick={(event) => {
+                                                        handleOpenMenu(event)
+                                                        setSelectedCustomer(row)
+                                                    }
+                                                        }>
                                                         <MoreVertIcon />
                                                     </IconButton>
                                                 </TableCell>
@@ -280,7 +301,7 @@ export default function CustomersPage() {
                     <TablePagination
                         rowsPerPageOptions={[5, 10, 25]}
                         component="div"
-                        count={CUSTOMERS_LIST.length}
+                        count={customers.length}
                         rowsPerPage={rowsPerPage}
                         page={page}
                         onPageChange={handleChangePage}
