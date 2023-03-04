@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 // @mui
@@ -33,7 +33,11 @@ import Scrollbar from "../components/scrollbar";
 import { CustomersListHead, CustomersListToolbar } from '../sections/customers';
 import { OrderNewDialog, OrderDeleteDialog, OrderEditDialog, OrderDetailDialog } from '../sections/orders';
 // mock
-import CUSTOMERS_LIST from '../_mock/customers';
+import orders from '../_mock/customers';
+// firebase api
+import {initializeApp} from "firebase/app";
+import {FIREBASE_API} from "../config.jsx";
+import {collection, getFirestore, onSnapshot, query} from "firebase/firestore";
 
 // ----------------------------------------------------------------------
 
@@ -92,6 +96,21 @@ export default function CustomersPage() {
 
     const [rowsPerPage, setRowsPerPage] = useState(5);
 
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
+
+    const [orders, setOrders] = useState([])
+
+    useEffect(()=> {
+        const q = query(collection(db, "customers"));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setOrders(snapshot.docs.map(doc => ({...doc.data(), id: doc.id})))
+        });
+
+        return () => unsubscribe()
+    }, [])
+
     const handleOpenMenu = (event) => {
         setOpen(event.currentTarget);
     };
@@ -108,7 +127,7 @@ export default function CustomersPage() {
 
     const handleSelectAllClick = (event) => {
         if (event.target.checked) {
-            const newSelecteds = CUSTOMERS_LIST.map((n) => n.name);
+            const newSelecteds = orders.map((n) => n.name);
             setSelected(newSelecteds);
             return;
         }
@@ -144,9 +163,9 @@ export default function CustomersPage() {
         setFilterName(event.target.value);
     };
 
-    const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - CUSTOMERS_LIST.length) : 0;
+    const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - orders.length) : 0;
 
-    const filteredUsers = applySortFilter(CUSTOMERS_LIST, getComparator(order, orderBy), filterName);
+    const filteredUsers = applySortFilter(orders, getComparator(order, orderBy), filterName);
 
     const isNotFound = !filteredUsers.length && !!filterName;
 
@@ -203,7 +222,7 @@ export default function CustomersPage() {
                                     order={order}
                                     orderBy={orderBy}
                                     headLabel={TABLE_HEAD}
-                                    rowCount={CUSTOMERS_LIST.length}
+                                    rowCount={orders.length}
                                     numSelected={selected.length}
                                     onRequestSort={handleRequestSort}
                                     onSelectAllClick={handleSelectAllClick}
@@ -278,7 +297,7 @@ export default function CustomersPage() {
                     <TablePagination
                         rowsPerPageOptions={[5, 10, 25]}
                         component="div"
-                        count={CUSTOMERS_LIST.length}
+                        count={orders.length}
                         rowsPerPage={rowsPerPage}
                         page={page}
                         onPageChange={handleChangePage}

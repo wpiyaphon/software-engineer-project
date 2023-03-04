@@ -31,7 +31,7 @@ import Label from '../components/label';
 import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar, CustomersNewDialog, CustomersDetailDialog, CustomersEditDialog, CustomersDeleteDialog } from '../sections/customers';
-// mock
+// firebase api
 import {initializeApp} from "firebase/app";
 import {FIREBASE_API} from "../config.jsx";
 import {collection, getFirestore, onSnapshot, query} from "firebase/firestore";
