@@ -183,6 +183,7 @@ export function NewProductDialog({ open, onClose }) {
     const values = watch();
 
     const onSubmit = (data) => {
+        console.log(data)
         try {
             const {
                 productImage,

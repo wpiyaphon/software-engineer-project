@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
+import {useEffect, useState} from 'react';
 // firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import {getFirestore, getDocs, query, where, collection} from "firebase/firestore";
 import { FIREBASE_API } from "../../config";
 // form
 import { useForm } from 'react-hook-form';
@@ -26,20 +27,36 @@ CustomersDetailDialog.propTypes = {
 
 export default function CustomersDetailDialog({ open, onClose, customer }) {
 
-    const DUMMY_ORDERS = [
-        {
-            orderDate: '03/01/2023',
-            product: 'Princess Candle',
-            amount: 5,
-            receipt: 'DownloadedImageFromFirebase'
-        }
-    ];
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
+
+    const [orders, setOrders] = useState([])
+
+    
 
     const defaultValues = {
         customerName: customer?.name || 'Dummy',
         customerEmail: customer?.email || 'dummy@dummy.com',
         customerAddress: customer?.address || 'Dummy place'
     }
+
+    const fetchOrders = async () => {
+        const orderRef = collection(db, "orders")
+        const q = query(orderRef, where("customerRef", "==", defaultValues.customerEmail));
+       
+        await getDocs(q)
+            .then((querySnapshot)=>{               
+                const newData = querySnapshot.docs
+                    .map((doc) => ({...doc.data(), id: doc.id}));
+                setOrders(newData);             
+            })
+
+        
+    }
+   
+    useEffect(()=>{
+        fetchOrders();
+    }, [customer])
 
     // Add logic to get customer's orders here
 
@@ -69,18 +86,23 @@ export default function CustomersDetailDialog({ open, onClose, customer }) {
                         <Table>
                             <OrdersListHead />
                             <TableBody>
-                                {DUMMY_ORDERS.map((order) => (
-                                    <TableRow key={order.orderDate}>
-                                        <TableCell align="left">{order.orderDate}</TableCell>
-                                        <TableCell align="left">{order.product}</TableCell>
-                                        <TableCell align="center">{order.amount}</TableCell>
-                                        <TableCell align="center">
-                                            <IconButton onClick={handleOpenReceiptImage}>
-                                                <NavigateNextRoundedIcon />
-                                            </IconButton>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                {orders.map((order) => {
+                                    const {date, productRef, amount, id} = order
+                                    const formattedDate = date.toDate().toString()
+                                    return (
+                                    
+                                        <TableRow key={id}>
+                                            <TableCell align="left">{formattedDate}</TableCell>
+                                            <TableCell align="left">{productRef}</TableCell>
+                                            <TableCell align="center">{amount}</TableCell>
+                                            <TableCell align="center">
+                                                <IconButton onClick={handleOpenReceiptImage}>
+                                                    <NavigateNextRoundedIcon />
+                                                </IconButton>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
                             </TableBody>
                         </Table>
                     </TableContainer>

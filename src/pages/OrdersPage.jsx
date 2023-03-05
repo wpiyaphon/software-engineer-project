@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import {useEffect, useState} from 'react';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
+import { Timestamp } from "firebase/firestore";
 // @mui
 import {
     Card,
@@ -32,8 +33,7 @@ import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar } from '../sections/customers';
 import { OrderNewDialog, OrderDeleteDialog, OrderEditDialog, OrderDetailDialog } from '../sections/orders';
-// mock
-import orders from '../_mock/customers';
+
 // firebase api
 import {initializeApp} from "firebase/app";
 import {FIREBASE_API} from "../config.jsx";
@@ -45,7 +45,7 @@ const TABLE_HEAD = [
     { id: 'orderId', label: 'Order ID', alignRight: false },
     { id: 'date', label: 'Date', alignRight: false },
     { id: 'customer', label: 'Customer', alignRight: false },
-    { id: 'product', label: 'Sold Product', alignRight: false },
+    { id: 'product', label: 'Product', alignRight: false },
     { id: '' },
 ];
 
@@ -102,7 +102,7 @@ export default function CustomersPage() {
     const [orders, setOrders] = useState([])
 
     useEffect(()=> {
-        const q = query(collection(db, "customers"));
+        const q = query(collection(db, "orders"));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             setOrders(snapshot.docs.map(doc => ({...doc.data(), id: doc.id})))
@@ -127,7 +127,7 @@ export default function CustomersPage() {
 
     const handleSelectAllClick = (event) => {
         if (event.target.checked) {
-            const newSelecteds = orders.map((n) => n.name);
+            const newSelecteds = orders.map((n) => n.id);
             setSelected(newSelecteds);
             return;
         }
@@ -196,6 +196,8 @@ export default function CustomersPage() {
         setDialog(false);
     };
 
+    console.log(orders)
+
     return (
         <>
             <Helmet>
@@ -229,8 +231,11 @@ export default function CustomersPage() {
                                 />
                                 <TableBody>
                                     {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                                        const { id, name, role, status, company, isVerified } = row;
-                                        const selectedUser = selected.indexOf(name) !== -1;
+                                        
+                                        const { customerRef, date, productRef, id } = row;
+                                        const formattedDate = date.toDate().toString()
+                                        
+                                        const selectedUser = selected.indexOf(id) !== -1;
 
                                         return (
                                             <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
@@ -241,16 +246,16 @@ export default function CustomersPage() {
                                                 <TableCell component="th" scope="row" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>
                                                     <Stack direction="row" alignItems="center" spacing={2}>
                                                         <Typography variant="subtitle2" noWrap>
-                                                            {name}
+                                                            {id}
                                                         </Typography>
                                                     </Stack>
                                                 </TableCell>
 
-                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{role}</TableCell> 
+                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{formattedDate}</TableCell> 
 
-                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{company}</TableCell>
+                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{customerRef}</TableCell>
 
-                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{isVerified ? 'Yes' : 'No'}</TableCell>
+                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{productRef}</TableCell>
 
                                                 <TableCell align="right">
                                                     <IconButton size="large" color="inherit" onClick={handleOpenMenu}>

@@ -1,10 +1,11 @@
 import PropTypes from 'prop-types';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
 // firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import {getFirestore, addDoc, getDocs, collection, Timestamp} from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FIREBASE_API } from "../../config";
 // form
 import { useForm, Controller } from 'react-hook-form';
@@ -34,19 +35,41 @@ OrderNewDialog.propTypes = {
 export default function OrderNewDialog({ open, onClose }) {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-    // const app = initializeApp(FIREBASE_API);
-    // const db = getFirestore(app);
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
 
-    const PRODUCT_OPTIONS = [
-        { name: 'Princess Candle', amount: 5 },
-        { name: 'Couple Candle', amount: 10 }
-    ];
+    const [customer_options, setCustomer_Options] = useState([])
+    const [product_options, setProduct_Options] = useState([])
 
-    const CUSTOMER_OPTIONS = [
-        { email: 'hong@hotmail.com', firstName: 'Piyaphon', lastName: 'Wu', address: '103 Fake Street' },
-        { email: 'kaung@hotmail.com', firstName: 'Kaung', lastName: 'Thu', address: '102 Fake Street' },
-        { email: 'tar@hotmail.com', firstName: 'Thanatuch', lastName: 'Lertritsirikul', address: '101 Fake Street' },
-    ];
+    const fetchCustomers = async () => {
+       
+        await getDocs(collection(db, "customers"))
+            .then((querySnapshot)=>{    
+                const newData = querySnapshot.docs
+                    .map((doc) => ({...doc.data()}));
+                setCustomer_Options(newData);                
+            })
+    }
+
+    const fetchProducts = async () => {
+       
+        await getDocs(collection(db, "products"))
+            .then((querySnapshot)=>{               
+                const newData = querySnapshot.docs
+                    .map((doc) => ({name: doc.data().name, amount: doc.data().variations[0].price}));
+                setProduct_Options(newData);                
+            })
+    }
+   
+    useEffect(()=>{
+        fetchCustomers();
+        fetchProducts();
+    }, [])
+    
+
+    const PRODUCT_OPTIONS = product_options;
+
+    const CUSTOMER_OPTIONS = customer_options;
 
     const NewOrderSchema = Yup.object().shape({
         receiptImage: Yup.mixed()
@@ -93,32 +116,62 @@ export default function OrderNewDialog({ open, onClose }) {
     } = values;
 
     const onSubmit = async (data) => {
+        console.log(data)
         try {
+            const {
+                customer,
+                orderDate,
+                receiptImage,
+                soldAmount,
+                soldProduct
+            } = data;
 
-            console.log(data)
+            console.log(orderDate)
 
-            // await setDoc(doc(db, "orders", `${orderDate}`), {
-            //     firstName: customerFirstName,
-            //     lastName: customerLastName,
-            //     email: customerEmail,
-            //     address: customerAddress
-            // });
+            const storage = getStorage();
+            const fileExtension = receiptImage.name.split('.').pop();
+            const storageRef = ref(storage, `orders/${customer}-${orderDate}.${fileExtension}`);
 
-            enqueueSnackbar('Created customer successfully', { variant: 'success' })
-            setTimeout(() => {
-                closeSnackbar();
-            }, 5000)
+            let imgURL = "/assets/images/products/product_4.jpg";
 
-            onClose();
-            setTimeout(() => {
-                reset(defaultValues);
-            }, 200);
+            uploadBytes(storageRef, receiptImage)
+                .then(() => {
+                    getDownloadURL(storageRef)
+                        .then((url) => {
+                            console.log(url)
+                            imgURL = url
+                            addDoc(collection(db, "orders"), {
+                                customerRef: customer,
+                                date: Timestamp.fromDate(new Date(orderDate)),
+                                amount: soldAmount,
+                                productRef: soldProduct
+                            })
+                                .then(() => onClose())
+                                .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))
+                                .then(() => setTimeout(() => {
+                                    reset(defaultValues)
+                                }, 200))
+                                .then(() => setTimeout(() => {
+                                    closeSnackbar()
+                                }, 2000))
+                        })
+                        .catch((error) => {
+                            console.log(error.message)
+                            enqueueSnackbar(error.message, { variant: 'error' });
+
+                            setTimeout(() => {
+                                closeSnackbar();
+                            }, 5000);
+
+                            setError('afterSubmit', {
+                                ...error,
+                                message: error.message
+                            });
+                        });
+                })
 
         } catch (error) {
-            enqueueSnackbar(error.message, { variant: 'error' });
-            setTimeout(() => {
-                closeSnackbar();
-            }, 5000);
+            console.error(error.message);
             setError('afterSubmit', {
                 ...error,
                 message: error.message
