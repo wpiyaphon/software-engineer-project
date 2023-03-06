@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 // @mui
@@ -32,18 +32,16 @@ import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar, CustomersNewDialog, CustomersDetailDialog, CustomersEditDialog, CustomersDeleteDialog } from '../sections/customers';
 // firebase api
-import {initializeApp} from "firebase/app";
-import {FIREBASE_API} from "../config.jsx";
-import {collection, getFirestore, onSnapshot, query} from "firebase/firestore";
+import { initializeApp } from "firebase/app";
+import { FIREBASE_API } from "../config.jsx";
+import { collection, getFirestore, onSnapshot, query } from "firebase/firestore";
 
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
     { id: 'name', label: 'Name', alignRight: false },
-    { id: 'company', label: 'Company', alignRight: false },
-    { id: 'role', label: 'Role', alignRight: false },
-    { id: 'isVerified', label: 'Verified', alignRight: false },
-    { id: 'status', label: 'Status', alignRight: false },
+    { id: 'email', label: 'Email', alignRight: false },
+    { id: 'address', label: 'Address', alignRight: false },
     { id: '' },
 ];
 
@@ -99,11 +97,11 @@ export default function CustomersPage() {
 
     const [customers, setCustomers] = useState([])
 
-    useEffect(()=> {
+    useEffect(() => {
         const q = query(collection(db, "customers"));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setCustomers(snapshot.docs.map(doc => ({...doc.data(), id: doc.id})))
+            setCustomers(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })))
         });
 
         return () => unsubscribe()
@@ -225,21 +223,19 @@ export default function CustomersPage() {
                                 />
                                 <TableBody>
                                     {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                                        const { id, name, role, status, company, isVerified } = row;
+                                        const { id, name, address, email } = row;
                                         const selectedUser = selected.indexOf(name) !== -1;
 
                                         return (
                                             <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
-                                                </TableCell>
+                                                <TableCell padding="checkbox" />
 
-                                                <TableCell component="th" scope="row" padding="none" 
-                                                onClick={() => {
-                                                    handleOpenDetailCustomerDialog()
-                                                    setSelectedCustomer(row)
-                                                }} 
-                                                sx={{ cursor: 'pointer' }}>
+                                                <TableCell component="th" scope="row" padding="none"
+                                                    onClick={() => {
+                                                        handleOpenDetailCustomerDialog()
+                                                        setSelectedCustomer(row)
+                                                    }}
+                                                    sx={{ cursor: 'pointer' }}>
                                                     <Stack direction="row" alignItems="center" spacing={2}>
                                                         <Typography variant="subtitle2" noWrap>
                                                             {name}
@@ -247,42 +243,26 @@ export default function CustomersPage() {
                                                     </Stack>
                                                 </TableCell>
 
-                                                <TableCell align="left"
-                                                           onClick={() => {
-                                                               handleOpenDetailCustomerDialog()
-                                                               setSelectedCustomer(row)
-                                                           }}
-                                                           sx={{ cursor: 'pointer' }}>{company}</TableCell>
+                                                <TableCell align="left" padding="none"
+                                                    onClick={() => {
+                                                        handleOpenDetailCustomerDialog()
+                                                        setSelectedCustomer(row)
+                                                    }}
+                                                    sx={{ cursor: 'pointer' }}>{email}</TableCell>
 
-                                                <TableCell align="left" 
-                                                            onClick={() => {
-                                                                handleOpenDetailCustomerDialog()
-                                                                setSelectedCustomer(row)
-                                                            }}
-                                                            sx={{ cursor: 'pointer' }}>{role}</TableCell>
-
-                                                <TableCell align="left" 
-                                                onClick={() => {
-                                                    handleOpenDetailCustomerDialog()
-                                                    setSelectedCustomer(row)
-                                                }}
-                                                sx={{ cursor: 'pointer' }}>{isVerified ? 'Yes' : 'No'}</TableCell>
-
-                                                <TableCell align="left" 
-                                                onClick={() => {
-                                                    handleOpenDetailCustomerDialog()
-                                                    setSelectedCustomer(row)
-                                                }} 
-                                                sx={{ cursor: 'pointer' }}>
-                                                    <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
-                                                </TableCell>
+                                                <TableCell align="left" padding="none"
+                                                    onClick={() => {
+                                                        handleOpenDetailCustomerDialog()
+                                                        setSelectedCustomer(row)
+                                                    }}
+                                                    sx={{ cursor: 'pointer' }}>{address}</TableCell>
 
                                                 <TableCell align="right">
                                                     <IconButton size="large" color="inherit" onClick={(event) => {
                                                         handleOpenMenu(event)
                                                         setSelectedCustomer(row)
                                                     }
-                                                        }>
+                                                    }>
                                                         <MoreVertIcon />
                                                     </IconButton>
                                                 </TableCell>

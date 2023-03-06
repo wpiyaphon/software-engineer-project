@@ -110,7 +110,7 @@ export default function ProductsPage() {
                     <StyledSearch
                         value={filterName}
                         onChange={handleFilterByName}
-                        placeholder="Search customer..."
+                        placeholder="Search product..."
                         startAdornment={
                             <InputAdornment position="start">
                                 <SearchIcon sx={{ color: 'text.disabled', width: 20, height: 20 }} />

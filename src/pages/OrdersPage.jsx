@@ -3,6 +3,7 @@ import {useEffect, useState} from 'react';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 import { Timestamp } from "firebase/firestore";
+import { format, getTime, formatDistanceToNow } from 'date-fns';
 // @mui
 import {
     Card,
@@ -32,7 +33,7 @@ import Label from '../components/label';
 import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar } from '../sections/customers';
-import { OrderNewDialog, OrderDeleteDialog, OrderEditDialog, OrderDetailDialog } from '../sections/orders';
+import { OrderNewDialog, OrderDeleteDialog, OrderEditDialog, OrderDetailDialog, OrdersListToolbar } from '../sections/orders';
 
 // firebase api
 import {initializeApp} from "firebase/app";
@@ -196,8 +197,6 @@ export default function CustomersPage() {
         setDialog(false);
     };
 
-    console.log(orders)
-
     return (
         <>
             <Helmet>
@@ -215,7 +214,7 @@ export default function CustomersPage() {
                 </Stack>
 
                 <Card>
-                    <CustomersListToolbar numSelected={selected.length} filterName={filterName} onFilterName={handleFilterByName} />
+                    <OrdersListToolbar numSelected={selected.length} filterName={filterName} onFilterName={handleFilterByName} />
 
                     <Scrollbar>
                         <TableContainer sx={{ minWidth: 800 }}>
@@ -233,15 +232,14 @@ export default function CustomersPage() {
                                     {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
                                         
                                         const { customerRef, date, productRef, id } = row;
-                                        const formattedDate = date.toDate().toString()
+                                        
+                                        const formattedDate = format(new Date(date.toDate().toString()), 'dd MMMM yyyy')
                                         
                                         const selectedUser = selected.indexOf(id) !== -1;
 
                                         return (
                                             <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
-                                                </TableCell>
+                                                <TableCell padding="checkbox" />
 
                                                 <TableCell component="th" scope="row" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>
                                                     <Stack direction="row" alignItems="center" spacing={2}>
@@ -251,11 +249,11 @@ export default function CustomersPage() {
                                                     </Stack>
                                                 </TableCell>
 
-                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{formattedDate}</TableCell> 
+                                                <TableCell align="left" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{formattedDate}</TableCell> 
 
-                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{customerRef}</TableCell>
+                                                <TableCell align="left" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{customerRef}</TableCell>
 
-                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{productRef}</TableCell>
+                                                <TableCell align="left" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{productRef}</TableCell>
 
                                                 <TableCell align="right">
                                                     <IconButton size="large" color="inherit" onClick={handleOpenMenu}>

@@ -57,7 +57,7 @@ export default function UserListToolbar({ numSelected, filterName, onFilterName 
                 <StyledSearch
                     value={filterName}
                     onChange={onFilterName}
-                    placeholder="Search customer..."
+                    placeholder="Search order..."
                     startAdornment={
                         <InputAdornment position="start">
                             <SearchIcon sx={{ color: 'text.disabled', width: 20, height: 20 }} />
