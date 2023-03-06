@@ -148,7 +148,7 @@ export default function OrderNewDialog({ open, onClose }) {
                                 receiptImage: imgURL,
                                 productID: productID
                             })
-                                .then(() => updateDoc(doc(db, "products", productID), {"variations[0].stock": increment(soldAmount)}))
+                                // .then(() => updateDoc(doc(db, "products", productID), {"variations[0].stock": increment(soldAmount)}))
                                 .then(() => onClose())
                                 .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))
                                 .then(() => setTimeout(() => {
