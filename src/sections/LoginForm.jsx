@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
-import { Link, Stack, IconButton, InputAdornment, TextField, Checkbox, Grid } from '@mui/material';
+import { Link, Stack, IconButton, InputAdornment, TextField, Checkbox, Grid, Alert } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
@@ -26,8 +26,8 @@ export default function LoginForm() {
     });
 
     const defaultValues = {
-        email: 'owner@gmail.com',
-        password: '123456'
+        email: '',
+        password: ''
     }
 
     const methods = useForm({
@@ -46,7 +46,6 @@ export default function LoginForm() {
         try {
             await login(data.email, data.password);
         } catch (error) {
-            console.error(error.message);
             reset(defaultValues);
             setError('afterSubmit', {
                 ...error,
@@ -59,6 +58,8 @@ export default function LoginForm() {
     return (
         <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
             <Stack spacing={3}>
+                {!!errors.afterSubmit && <Alert severity="error">{errors.afterSubmit.message}</Alert>}
+
                 <RHFTextField
                     fullWidth
                     name="email"
