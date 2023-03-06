@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack'
 // firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { FIREBASE_API } from "../../config";
 // @mui
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
@@ -10,34 +10,25 @@ import { LoadingButton } from '@mui/lab';
 
 // ----------------------------------------------------------------------
 
-OrderNewDialog.propTypes = {
+OrderDeleteDialog.propTypes = {
     open: PropTypes.bool,
-    onClose: PropTypes.func
+    onClose: PropTypes.func,
+    order: PropTypes.object
 };
 
 // ----------------------------------------------------------------------
 
-export default function OrderNewDialog({ open, onClose, order }) {
+export default function OrderDeleteDialog({ open, onClose, order }) {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-    // const app = initializeApp(FIREBASE_API);
-    // const db = getFirestore(app);
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
 
-    const handleDelete = async (order) => {
+    const handleDelete = async () => {
         try {
-
-            // Add logic for deleting order detail in Firebase below!
-
-            // await setDoc(doc(db, "customers", `${customerEmail}`), {
-            //     firstName: customerFirstName,
-            //     lastName: customerLastName,
-            //     email: customerEmail,
-            //     address: customerAddress
-            // });
-
-            console.log("deleting order will be added soon!");
-
-            enqueueSnackbar('Successfully deteled the order', { variant: 'success' })
+            await deleteDoc(doc(db, "orders", order.id))
+            .then(() => enqueueSnackbar('Successfully deteled the order', { variant: 'success' }))
+            .catch((error) => console.error(error))
             setTimeout(() => {
                 closeSnackbar();
             }, 5000);

@@ -1,8 +1,9 @@
 import { Helmet } from "react-helmet-async";
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 import { Timestamp } from "firebase/firestore";
+import { format} from 'date-fns';
 // @mui
 import {
     Card,
@@ -32,12 +33,12 @@ import Label from '../components/label';
 import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar } from '../sections/customers';
-import { OrderNewDialog, OrderDeleteDialog, OrderEditDialog, OrderDetailDialog } from '../sections/orders';
+import { OrderNewDialog, OrderDeleteDialog, OrderEditDialog, OrderDetailDialog, OrdersListToolbar } from '../sections/orders';
 
 // firebase api
-import {initializeApp} from "firebase/app";
-import {FIREBASE_API} from "../config.jsx";
-import {collection, getFirestore, onSnapshot, query} from "firebase/firestore";
+import { initializeApp } from "firebase/app";
+import { FIREBASE_API } from "../config.jsx";
+import { collection, getFirestore, onSnapshot, query } from "firebase/firestore";
 
 // ----------------------------------------------------------------------
 
@@ -74,13 +75,19 @@ function applySortFilter(array, comparator, query) {
         if (order !== 0) return order;
         return a[1] - b[1];
     });
+
+    // new Date(date.toDate().toString()),
     if (query) {
-        return filter(array, (_user) => _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1);
+        return filter(array, (_user) => 
+        _user.productRef.toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
+        _user.customerRef.toLowerCase().indexOf(query.toLowerCase())!== -1 ||
+        format(new Date(_user.date.toDate().toString()), 'dd MMMM yyyy').toLowerCase().indexOf(query.toLowerCase())!== -1
+        );
     }
     return stabilizedThis.map((el) => el[0]);
 }
 
-export default function CustomersPage() {
+export default function OrdersPage() {
 
     const [open, setOpen] = useState(null);
 
@@ -101,23 +108,15 @@ export default function CustomersPage() {
 
     const [orders, setOrders] = useState([])
 
-    useEffect(()=> {
+    useEffect(() => {
         const q = query(collection(db, "orders"));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setOrders(snapshot.docs.map(doc => ({...doc.data(), id: doc.id})))
+            setOrders(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })))
         });
 
         return () => unsubscribe()
     }, [])
-
-    const handleOpenMenu = (event) => {
-        setOpen(event.currentTarget);
-    };
-
-    const handleCloseMenu = () => {
-        setOpen(null);
-    };
 
     const handleRequestSort = (event, property) => {
         const isAsc = orderBy === property && order === 'asc';
@@ -174,29 +173,37 @@ export default function CustomersPage() {
     const [openDetailOrderDialog, setOpenDetailOrderDialog] = useState(false);
     const [openEditOrderDialog, setOpenEditOrderDialog] = useState(false);
     const [openDeleteOrderDialog, setOpenDeleteOrderDialog] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [selectedOrder, setSelectedOrder] = useState({});
 
-    const handleOpenDetailOrderDialog = () => {
-        // setSelectedOrder
+    const handleOpenMenu = (event, row) => {
+        setOpen(event.currentTarget);
+        setSelectedOrder(row);
+    };
+
+    const handleCloseMenu = () => {
+        setOpen(null);
+        setSelectedOrder({});
+    };
+
+    const handleOpenDetailOrderDialog = async (row) => {
+        await setSelectedOrder(row);
         setOpenDetailOrderDialog(true);
     }
 
-    const handleOpenDeleteOrderDialog = () => {
-        // setSelectedOrder
+    const handleOpenDeleteOrderDialog = async () => {
+        setOpen(null)
         setOpenDeleteOrderDialog(true);
     };
 
-    const handleOpenEditOrderDialog = () => {
-        // setSelectedOrder
+    const handleOpenEditOrderDialog = async () => {
+        setOpen(null)
         setOpenEditOrderDialog(true);
     };
 
-    const handleCloseDialog = (setDialog) => {
-        // Set selected customer to be empty object here
-        setDialog(false);
+    const handleCloseDialog = async (setDialog) => {
+        await setDialog(false);
+        setSelectedOrder({});
     };
-
-    console.log(orders)
 
     return (
         <>
@@ -215,7 +222,7 @@ export default function CustomersPage() {
                 </Stack>
 
                 <Card>
-                    <CustomersListToolbar numSelected={selected.length} filterName={filterName} onFilterName={handleFilterByName} />
+                    <OrdersListToolbar numSelected={selected.length} filterName={filterName} onFilterName={handleFilterByName} />
 
                     <Scrollbar>
                         <TableContainer sx={{ minWidth: 800 }}>
@@ -231,19 +238,18 @@ export default function CustomersPage() {
                                 />
                                 <TableBody>
                                     {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                                        
+
                                         const { customerRef, date, productRef, id } = row;
-                                        const formattedDate = date.toDate().toString()
-                                        
+
+                                        const formattedDate = format(new Date(date.toDate().toString()), 'dd MMMM yyyy')
+
                                         const selectedUser = selected.indexOf(id) !== -1;
 
                                         return (
                                             <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
-                                                </TableCell>
+                                                <TableCell padding="checkbox" />
 
-                                                <TableCell component="th" scope="row" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>
+                                                <TableCell component="th" scope="row" padding="none" onClick={() => handleOpenDetailOrderDialog(row)} sx={{ cursor: 'pointer' }}>
                                                     <Stack direction="row" alignItems="center" spacing={2}>
                                                         <Typography variant="subtitle2" noWrap>
                                                             {id}
@@ -267,7 +273,10 @@ export default function CustomersPage() {
                                                 }} sx={{ cursor: 'pointer' }}>{productRef}</TableCell>
 
                                                 <TableCell align="right">
-                                                    <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
+                                                    <IconButton size="large" color="inherit" onClick={(event) => {
+                                                        handleOpenMenu(event)
+                                                        setSelectedOrder(row)
+                                                    }}>
                                                         <MoreVertIcon />
                                                     </IconButton>
                                                 </TableCell>

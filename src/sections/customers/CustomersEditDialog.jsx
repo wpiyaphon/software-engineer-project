@@ -70,16 +70,12 @@ export default function CustomersEditDialog({ open, onClose, customer }) {
 
             // Add logic for updating customer to Firebase below!
 
-            await setDoc(doc(db, "customers", `${customer.email}`), {
+            await setDoc(doc(db, "customers", `${customer.id}`), {
                 name: customerFirstName + " " + customerLastName,
                 firstName: customerFirstName,
                 lastName: customerLastName,
                 email: customerEmail,
                 address: customerAddress,
-                company: "Microsoft",
-                isVerified: true,
-                role: "Full Stack Developer",
-                status: "active"
             });
 
             enqueueSnackbar('Edited successfully', { variant: 'success' })

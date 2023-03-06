@@ -1,11 +1,15 @@
 import PropTypes from 'prop-types';
 import { useCallback } from 'react';
 import {useEffect, useState} from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
+import { format, getTime, formatDistanceToNow } from 'date-fns';
 // firebase
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, getDocs, collection } from "firebase/firestore";
+import { getFirestore, doc, setDoc, query, getDocs, collection, Timestamp } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FIREBASE_API } from "../../config";
 // form
 import { useForm, Controller } from 'react-hook-form';
@@ -43,43 +47,44 @@ export default function OrderEditDialog({ open, onClose, order }) {
     const [product_options, setProduct_Options] = useState([])
 
     const fetchCustomers = async () => {
-       
+
         await getDocs(collection(db, "customers"))
-            .then((querySnapshot)=>{    
+            .then((querySnapshot) => {
                 const newData = querySnapshot.docs
-                    .map((doc) => ({...doc.data()}));
-                setCustomer_Options(newData);                
+                    .map((doc) => ({ ...doc.data() }));
+                setCustomer_Options(newData);
             })
     }
 
     const fetchProducts = async () => {
-       
+
         await getDocs(collection(db, "products"))
-            .then((querySnapshot)=>{               
+            .then((querySnapshot) => {
                 const newData = querySnapshot.docs
-                    .map((doc) => ({name: doc.data().name, amount: doc.data().variations[0].price}));
-                setProduct_Options(newData);                
+                    .map((doc) => ({ ...doc.data() }));
+                setProduct_Options(newData);
             })
     }
-   
-    useEffect(()=>{
+
+    useEffect(() => {
         fetchCustomers();
         fetchProducts();
     }, [])
 
-    const DUMMY_ORDER = {
-        receiptImage: '',
-        orderDate: '02/24/2023',
-        soldProduct: 'Princess Candle',
-        soldAmount: 4,
-        customer: 'hong@hotmail.com'
-    };
+    const PRODUCT_OPTIONS = [
+        { name: ' Candle', amount: 5 },
+        { name: 'Couple Candle', amount: 10 }
+    ];
+
+    const CUSTOMER_OPTIONS = [
+        { email: 'hong@hotmail.com', firstName: 'Piyaphon', lastName: 'Wu', address: '103 Fake Street' },
+        { email: 'kaung@hotmail.com', firstName: 'Kaung', lastName: 'Thu', address: '102 Fake Street' },
+        { email: 'tar@hotmail.com', firstName: 'Thanatuch', lastName: 'Lertritsirikul', address: '101 Fake Street' },
+    ];
 
     const NewOrderSchema = Yup.object().shape({
         receiptImage: Yup.mixed()
-            .test('required', "Product image is required", (value) => value !== '')
-            .test('fileSize', 'The file is too large', (file) => file && file.size <= MAX_FILE_SIZE)
-            .test('fileFormat', 'Unsupported Format', (file) => file && FILE_FORMATS.includes(file.type)),
+            .test('required', "Product image is required", (file) => file !== ''),
         orderDate: Yup.string().required('Date is required'),
         soldProduct: Yup.string().required('Sold product is required'),
         soldAmount: Yup.number().typeError('Must be a number')
@@ -88,12 +93,13 @@ export default function OrderEditDialog({ open, onClose, order }) {
         customer: Yup.string().email('Must be a valid email').required('Customer is required'),
     });
 
+
     const defaultValues = {
-        receiptImage: order?.receiptImage || DUMMY_ORDER.receiptImage,
-        orderDate: order?.orderDate || DUMMY_ORDER.orderDate,
-        soldProduct: order?.soldProduct || DUMMY_ORDER.soldProduct,
-        soldAmount: order?.soldAmount || DUMMY_ORDER.soldAmount,
-        customer: order?.customer || DUMMY_ORDER.customer
+        receiptImage: order?.receiptImage,
+        orderDate: format(new Date(order?.date.toDate().toString()), 'MM/dd/yyyy'),
+        soldProduct: order?.productRef,
+        soldAmount: order?.amount,
+        customer: order?.customerRef
     }
 
     const methods = useForm({
@@ -122,7 +128,13 @@ export default function OrderEditDialog({ open, onClose, order }) {
     const onSubmit = async (data) => {
         try {
 
-            console.log(data)
+            const {
+                customer,
+                orderDate,
+                receiptImage,
+                soldAmount,
+                soldProduct
+            } = data;
 
             const {
                 customerRef,
@@ -133,22 +145,47 @@ export default function OrderEditDialog({ open, onClose, order }) {
 
             // Add logic for updating customer to Firebase below!
 
-            await setDoc(doc(db, "orders", `${order.id}`), {
-                amount: amount,
-                customerRef: customerRef,
-                date: date,
-                productRef: productRef
-            });
-
-            enqueueSnackbar('Editted order successfully', { variant: 'success' })
-            setTimeout(() => {
-                closeSnackbar();
-            }, 5000)
-
-            onClose();
-            setTimeout(() => {
-                reset(defaultValues);
-            }, 200);
+                const storage = getStorage();
+                const fileExtension = receiptImage.name.split('.').pop();
+                const storageRef = ref(storage, `orders/${customer}-${orderDate}.${fileExtension}`);
+                await uploadBytes(storageRef, receiptImage)
+                    .then(() => {
+                        getDownloadURL(storageRef)
+                            .then((url) => {
+                                return setDoc(doc(db, "orders", `${order.id}`), {
+                                    customerRef: customer,
+                                    date: Timestamp.fromDate(new Date(orderDate)),
+                                    amount: soldAmount,
+                                    productRef: soldProduct,
+                                    receiptImage: url
+                                })
+                                    .then(() => onClose())
+                                    .then(() => enqueueSnackbar('Edited order successfully', { variant: 'success' }))
+                                    .then(() => setTimeout(() => {
+                                        reset(defaultValues)
+                                    }, 200))
+                                    .then(() => setTimeout(() => {
+                                        closeSnackbar()
+                                    }, 2000))
+                            })
+                    })
+            } else {
+                await setDoc(doc(db, "orders", `${order.id}`), {
+                    customerRef: customer,
+                    date: Timestamp.fromDate(new Date(orderDate)),
+                    amount: soldAmount,
+                    productRef: soldProduct,
+                    receiptImage: receiptImage
+                })
+                    .then(() => onClose())
+                    .then(() => enqueueSnackbar('Edited order successfully', { variant: 'success' }))
+                    .then(() => setTimeout(() => {
+                        reset(defaultValues)
+                    }, 200))
+                    .then(() => setTimeout(() => {
+                        closeSnackbar()
+                    }, 2000))
+            }
 
         } catch (error) {
             enqueueSnackbar(error.message, { variant: 'error' });

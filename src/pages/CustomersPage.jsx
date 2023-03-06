@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 // @mui
@@ -32,18 +32,16 @@ import Scrollbar from "../components/scrollbar";
 // sections
 import { CustomersListHead, CustomersListToolbar, CustomersNewDialog, CustomersDetailDialog, CustomersEditDialog, CustomersDeleteDialog } from '../sections/customers';
 // firebase api
-import {initializeApp} from "firebase/app";
-import {FIREBASE_API} from "../config.jsx";
-import {collection, getFirestore, onSnapshot, query} from "firebase/firestore";
+import { initializeApp } from "firebase/app";
+import { FIREBASE_API } from "../config.jsx";
+import { collection, getFirestore, onSnapshot, query } from "firebase/firestore";
 
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
     { id: 'name', label: 'Name', alignRight: false },
-    { id: 'company', label: 'Company', alignRight: false },
-    { id: 'role', label: 'Role', alignRight: false },
-    { id: 'isVerified', label: 'Verified', alignRight: false },
-    { id: 'status', label: 'Status', alignRight: false },
+    { id: 'email', label: 'Email', alignRight: false },
+    { id: 'address', label: 'Address', alignRight: false },
     { id: '' },
 ];
 
@@ -73,7 +71,10 @@ function applySortFilter(array, comparator, query) {
         return a[1] - b[1];
     });
     if (query) {
-        return filter(array, (_user) => _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1);
+        return filter(array, (_user) =>
+            _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
+            _user.email.toLowerCase().indexOf(query.toLowerCase()) !== -1
+        );
     }
     return stabilizedThis.map((el) => el[0]);
 }
@@ -99,23 +100,15 @@ export default function CustomersPage() {
 
     const [customers, setCustomers] = useState([])
 
-    useEffect(()=> {
+    useEffect(() => {
         const q = query(collection(db, "customers"));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setCustomers(snapshot.docs.map(doc => ({...doc.data(), id: doc.id})))
+            setCustomers(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })))
         });
 
         return () => unsubscribe()
     }, [])
-
-    const handleOpenMenu = (event) => {
-        setOpen(event.currentTarget);
-    };
-
-    const handleCloseMenu = () => {
-        setOpen(null);
-    };
 
     const handleRequestSort = (event, property) => {
         const isAsc = orderBy === property && order === 'asc';
@@ -172,24 +165,35 @@ export default function CustomersPage() {
     const [openDetailCustomerDialog, setOpenDetailCustomerDialog] = useState(false);
     const [openEditCustomerDialog, setOpenEditCustomerDialog] = useState(false);
     const [openDeleteCustomerDialog, setOpenDeleteCustomerDialog] = useState(false);
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [selectedCustomer, setSelectedCustomer] = useState({});
+
+    const handleOpenMenu = (event) => {
+        setOpen(event.currentTarget);
+    };
+
+    const handleCloseMenu = () => {
+        setOpen(null);
+        setSelectedOrder({});
+    };
 
     const handleOpenEditCustomerDialog = () => {
-        // Set selected customer here
+        setOpen(null)
         setOpenEditCustomerDialog(true);
     };
 
     const handleOpenDeleteCustomerDialog = () => {
+        setOpen(null)
         setOpenDeleteCustomerDialog(true);
     };
 
-    const handleOpenDetailCustomerDialog = () => {
+    const handleOpenDetailCustomerDialog = async (row) => {
+        await setSelectedCustomer(row);
         setOpenDetailCustomerDialog(true);
     };
 
-    const handleCloseDialog = (setDialog) => {
-        // Set selected customer to be empty object here
-        setDialog(false);
+    const handleCloseDialog = async (setDialog) => {
+        await setDialog(false);
+        setSelectedCustomer({})
     };
 
     return (
@@ -225,21 +229,16 @@ export default function CustomersPage() {
                                 />
                                 <TableBody>
                                     {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                                        const { id, name, role, status, company, isVerified } = row;
+                                        const { id, name, address, email } = row;
                                         const selectedUser = selected.indexOf(name) !== -1;
 
                                         return (
                                             <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox checked={selectedUser} onChange={(event) => handleClick(event, name)} />
-                                                </TableCell>
+                                                <TableCell padding="checkbox" />
 
-                                                <TableCell component="th" scope="row" padding="none" 
-                                                onClick={() => {
-                                                    handleOpenDetailCustomerDialog();
-                                                    setSelectedCustomer(row)
-                                                }} 
-                                                sx={{ cursor: 'pointer' }}>
+                                                <TableCell component="th" scope="row" padding="none"
+                                                    onClick={() => handleOpenDetailCustomerDialog(row)}
+                                                    sx={{ cursor: 'pointer' }}>
                                                     <Stack direction="row" alignItems="center" spacing={2}>
                                                         <Typography variant="subtitle2" noWrap>
                                                             {name}
@@ -247,42 +246,20 @@ export default function CustomersPage() {
                                                     </Stack>
                                                 </TableCell>
 
-                                                <TableCell align="left"
-                                                           onClick={() => {
-                                                               handleOpenDetailCustomerDialog()
-                                                               setSelectedCustomer(row)
-                                                           }}
-                                                           sx={{ cursor: 'pointer' }}>{company}</TableCell>
+                                                <TableCell align="left" padding="none"
+                                                    onClick={() => handleOpenDetailCustomerDialog(row)}
+                                                    sx={{ cursor: 'pointer' }}>{email}</TableCell>
 
-                                                <TableCell align="left" 
-                                                            onClick={() => {
-                                                                handleOpenDetailCustomerDialog()
-                                                                setSelectedCustomer(row)
-                                                            }}
-                                                            sx={{ cursor: 'pointer' }}>{role}</TableCell>
-
-                                                <TableCell align="left" 
-                                                onClick={() => {
-                                                    handleOpenDetailCustomerDialog()
-                                                    setSelectedCustomer(row)
-                                                }}
-                                                sx={{ cursor: 'pointer' }}>{isVerified ? 'Yes' : 'No'}</TableCell>
-
-                                                <TableCell align="left" 
-                                                onClick={() => {
-                                                    handleOpenDetailCustomerDialog()
-                                                    setSelectedCustomer(row)
-                                                }} 
-                                                sx={{ cursor: 'pointer' }}>
-                                                    <Label color={(status === 'banned' && 'error') || 'success'}>{sentenceCase(status)}</Label>
-                                                </TableCell>
+                                                <TableCell align="left" padding="none"
+                                                    onClick={() => handleOpenDetailCustomerDialog(row)}
+                                                    sx={{ cursor: 'pointer' }}>{address}</TableCell>
 
                                                 <TableCell align="right">
                                                     <IconButton size="large" color="inherit" onClick={(event) => {
                                                         handleOpenMenu(event)
                                                         setSelectedCustomer(row)
                                                     }
-                                                        }>
+                                                    }>
                                                         <MoreVertIcon />
                                                     </IconButton>
                                                 </TableCell>
@@ -365,9 +342,9 @@ export default function CustomersPage() {
             </Popover>
 
             <CustomersNewDialog open={openNewCustomerDialog} onClose={() => setOpenNewCustomerDialog(false)} />
-            <CustomersDetailDialog open={openDetailCustomerDialog} onClose={() => handleCloseDialog(setOpenDetailCustomerDialog)} customer={selectedCustomer} />
-            <CustomersEditDialog open={openEditCustomerDialog} onClose={() => handleCloseDialog(setOpenEditCustomerDialog)} customer={selectedCustomer} />
-            <CustomersDeleteDialog open={openDeleteCustomerDialog} onClose={() => handleCloseDialog(setOpenDeleteCustomerDialog)} customer={selectedCustomer} />
+            {Object.keys(selectedCustomer).length > 0 && <CustomersDetailDialog open={openDetailCustomerDialog} onClose={() => handleCloseDialog(setOpenDetailCustomerDialog)} customer={selectedCustomer} />}
+            {Object.keys(selectedCustomer).length > 0 && <CustomersEditDialog open={openEditCustomerDialog} onClose={() => handleCloseDialog(setOpenEditCustomerDialog)} customer={selectedCustomer} />}
+            {Object.keys(selectedCustomer).length > 0 && <CustomersDeleteDialog open={openDeleteCustomerDialog} onClose={() => handleCloseDialog(setOpenDeleteCustomerDialog)} customer={selectedCustomer} />}
         </>
     )
 }

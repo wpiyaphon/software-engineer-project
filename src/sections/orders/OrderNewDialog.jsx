@@ -40,32 +40,33 @@ export default function OrderNewDialog({ open, onClose }) {
 
     const [customer_options, setCustomer_Options] = useState([])
     const [product_options, setProduct_Options] = useState([])
+    
 
     const fetchCustomers = async () => {
-       
+
         await getDocs(collection(db, "customers"))
-            .then((querySnapshot)=>{    
+            .then((querySnapshot) => {
                 const newData = querySnapshot.docs
-                    .map((doc) => ({...doc.data()}));
-                setCustomer_Options(newData);                
+                    .map((doc) => ({ ...doc.data() }));
+                setCustomer_Options(newData);
             })
     }
 
     const fetchProducts = async () => {
-       
+
         await getDocs(collection(db, "products"))
-            .then((querySnapshot)=>{               
+            .then((querySnapshot) => {
                 const newData = querySnapshot.docs
-                    .map((doc) => ({name: doc.data().name, amount: doc.data().variations[0].price}));
-                setProduct_Options(newData);                
+                    .map((doc) => ({ ...doc.data() }));
+                setProduct_Options(newData);
             })
     }
-   
-    useEffect(()=>{
+
+    useEffect(() => {
         fetchCustomers();
         fetchProducts();
     }, [])
-    
+
 
     const PRODUCT_OPTIONS = product_options;
 
@@ -116,7 +117,7 @@ export default function OrderNewDialog({ open, onClose }) {
     } = values;
 
     const onSubmit = async (data) => {
-        console.log(data)
+
         try {
             const {
                 customer,
@@ -125,8 +126,6 @@ export default function OrderNewDialog({ open, onClose }) {
                 soldAmount,
                 soldProduct
             } = data;
-
-            console.log(orderDate)
 
             const storage = getStorage();
             const fileExtension = receiptImage.name.split('.').pop();
@@ -138,13 +137,13 @@ export default function OrderNewDialog({ open, onClose }) {
                 .then(() => {
                     getDownloadURL(storageRef)
                         .then((url) => {
-                            console.log(url)
                             imgURL = url
                             addDoc(collection(db, "orders"), {
                                 customerRef: customer,
                                 date: Timestamp.fromDate(new Date(orderDate)),
                                 amount: soldAmount,
-                                productRef: soldProduct
+                                productRef: soldProduct,
+                                receiptImage: imgURL
                             })
                                 .then(() => onClose())
                                 .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))
@@ -156,7 +155,7 @@ export default function OrderNewDialog({ open, onClose }) {
                                 }, 2000))
                         })
                         .catch((error) => {
-                            console.log(error.message)
+                            console.error(error.message)
                             enqueueSnackbar(error.message, { variant: 'error' });
 
                             setTimeout(() => {
