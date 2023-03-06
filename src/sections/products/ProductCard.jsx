@@ -27,7 +27,7 @@ ShopProductCard.propTypes = {
 
 export default function ShopProductCard({ product, onEdit }) {
   const { name, cover, variations } = product;
-  const stock = variations.map((variant) => variant.stock).reduce((partialSum, a) => partialSum + a, 0);
+  const stock = variations?.map((variant) => variant.stock).reduce((partialSum, a) => partialSum + a, 0) || 0;
 
   return (
     <Card>

@@ -1,15 +1,12 @@
 import PropTypes from 'prop-types';
-import { useCallback } from 'react';
-import {useEffect, useState} from 'react';
 import { useCallback, useState, useEffect } from 'react';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
 import { format, getTime, formatDistanceToNow } from 'date-fns';
 // firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, getDocs, collection } from "firebase/firestore";
-import { getFirestore, doc, setDoc, query, getDocs, collection, Timestamp } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import {getFirestore, getDocs, collection, Timestamp, increment, setDoc, doc, updateDoc} from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { FIREBASE_API } from "../../config";
 // form
 import { useForm, Controller } from 'react-hook-form';
@@ -71,16 +68,6 @@ export default function OrderEditDialog({ open, onClose, order }) {
         fetchProducts();
     }, [])
 
-    const PRODUCT_OPTIONS = [
-        { name: ' Candle', amount: 5 },
-        { name: 'Couple Candle', amount: 10 }
-    ];
-
-    const CUSTOMER_OPTIONS = [
-        { email: 'hong@hotmail.com', firstName: 'Piyaphon', lastName: 'Wu', address: '103 Fake Street' },
-        { email: 'kaung@hotmail.com', firstName: 'Kaung', lastName: 'Thu', address: '102 Fake Street' },
-        { email: 'tar@hotmail.com', firstName: 'Thanatuch', lastName: 'Lertritsirikul', address: '101 Fake Street' },
-    ];
 
     const NewOrderSchema = Yup.object().shape({
         receiptImage: Yup.mixed()
@@ -96,7 +83,7 @@ export default function OrderEditDialog({ open, onClose, order }) {
 
     const defaultValues = {
         receiptImage: order?.receiptImage,
-        orderDate: format(new Date(order?.date.toDate().toString()), 'MM/dd/yyyy'),
+        orderDate: format(order?.date.toDate(), 'dd MMMM yyyy'),
         soldProduct: order?.productRef,
         soldAmount: order?.amount,
         customer: order?.customerRef
@@ -133,17 +120,11 @@ export default function OrderEditDialog({ open, onClose, order }) {
                 orderDate,
                 receiptImage,
                 soldAmount,
-                soldProduct
+                soldProduct,
+                productID
             } = data;
 
-            const {
-                customerRef,
-                date,
-                amount,
-                productRef
-            } = data;
-
-            // Add logic for updating customer to Firebase below!
+            if (receiptImage instanceof File) {
 
                 const storage = getStorage();
                 const fileExtension = receiptImage.name.split('.').pop();
@@ -177,6 +158,7 @@ export default function OrderEditDialog({ open, onClose, order }) {
                     productRef: soldProduct,
                     receiptImage: receiptImage
                 })
+                    .then(() => updateDoc(doc(db, "products", productID), {"variations[0].stock": increment(soldAmount)}))
                     .then(() => onClose())
                     .then(() => enqueueSnackbar('Edited order successfully', { variant: 'success' }))
                     .then(() => setTimeout(() => {
@@ -320,7 +302,7 @@ export default function OrderEditDialog({ open, onClose, order }) {
                                         '&:last-of-type': { mb: 0 },
                                     }}
                                 >
-                                    {option.name}
+                                    {option.firstName} {option.lastName}
                                 </MenuItem>
                             ))}
                         </RHFSelect>

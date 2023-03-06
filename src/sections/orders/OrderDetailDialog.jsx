@@ -7,6 +7,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 // @mui
 import { DatePicker } from '@mui/x-date-pickers';
+import { Timestamp } from 'firebase/firestore';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack, TextField, Box, Grid } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 // components
@@ -46,24 +47,14 @@ const StyledDropZone = styled('div')(({ theme }) => ({
 
 export default function OrderDetailDialog({ open, onClose, order }) {
 
-    //console.log(order)
-
     const defaultValues = {
-        orderRef: order?.id || 'Dummy',
+        amount: order?.amount || 'Dummy',
         customerRef: order?.customerRef || 'dummy@dummy.com',
-        date: order?.date || 'Dummy place',
-        productRef: order?.productRef || 'Dummy order'
-    };
+        date: format(order?.date.toDate(), 'dd MMMM yyyy') || 'Dummy place',
+        productRef: order?.productRef || 'Dummy place',
+        receiptImage: order?.receiptImage || 'Dummy place'
+    }
 
-    const {
-        amount,
-        customerRef,
-        date,
-        productRef,
-        receiptImage
-    } = order;
-
-    const formattedDate = format(new Date(date.toDate().toString()), 'dd MMMM yyyy')
 
     const handleCloseDialog = () => {
         onClose();
@@ -86,22 +77,22 @@ export default function OrderDetailDialog({ open, onClose, order }) {
                             cursor: "auto"
                         }}
                     >
-                        <SingleFilePreview file={receiptImage} />
+                        <SingleFilePreview file={defaultValues.receiptImage} />
                     </StyledDropZone>
                 </Box>
                 <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    <TextField fullWidth label="Date" value={formattedDate} disabled />
+                    <TextField fullWidth label="Date" value={defaultValues.date} disabled />
                 </Stack>
                 <Grid container direction="row" spacing={2} sx={{ mt: 0 }}>
                     <Grid item xs={6} md={8}>
-                        <TextField fullWidth label="Sold Product" value={productRef} disabled />
+                        <TextField fullWidth label="Sold Product" value={defaultValues.productRef} disabled />
                     </Grid>
                     <Grid item xs={6} md={4}>
-                        <TextField fullWidth label="Sold Amount" value={amount} disabled />
+                        <TextField fullWidth label="Sold Amount" value={defaultValues.amount} disabled />
                     </Grid>
                 </Grid>
                 <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    <TextField fullWidth label="Customer" value={customerRef} disabled />
+                    <TextField fullWidth label="Customer" value={defaultValues.customerRef} disabled />
                 </Stack>
             </DialogContent>
         </Dialog>

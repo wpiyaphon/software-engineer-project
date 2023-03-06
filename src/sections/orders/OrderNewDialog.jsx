@@ -4,8 +4,8 @@ import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
 // firebase
 import { initializeApp } from "firebase/app";
-import {getFirestore, addDoc, getDocs, collection, Timestamp, setDoc} from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import {getFirestore, addDoc, getDocs, collection, Timestamp, increment, doc, updateDoc} from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { FIREBASE_API } from "../../config";
 // form
 import { useForm, Controller } from 'react-hook-form';
@@ -57,7 +57,7 @@ export default function OrderNewDialog({ open, onClose }) {
         await getDocs(collection(db, "products"))
             .then((querySnapshot) => {
                 const newData = querySnapshot.docs
-                    .map((doc) => ({ ...doc.data() }));
+                    .map((doc) => ({ ...doc.data(), id: doc.id }));
                 setProduct_Options(newData);
             })
     }
@@ -127,6 +127,8 @@ export default function OrderNewDialog({ open, onClose }) {
                 soldProduct
             } = data;
 
+            const productID = product_options.find(product => product.name == soldProduct).id;
+
             const storage = getStorage();
             const fileExtension = receiptImage.name.split('.').pop();
             const storageRef = ref(storage, `orders/${customer}-${orderDate}.${fileExtension}`);
@@ -143,8 +145,10 @@ export default function OrderNewDialog({ open, onClose }) {
                                 date: Timestamp.fromDate(new Date(orderDate)),
                                 amount: soldAmount,
                                 productRef: soldProduct,
-                                receiptImage: imgURL
+                                receiptImage: imgURL,
+                                productID: productID
                             })
+                                .then(() => updateDoc(doc(db, "products", productID), {"variations[0].stock": increment(soldAmount)}))
                                 .then(() => onClose())
                                 .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))
                                 .then(() => setTimeout(() => {

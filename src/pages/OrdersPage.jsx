@@ -173,7 +173,11 @@ export default function OrdersPage() {
     const [openDetailOrderDialog, setOpenDetailOrderDialog] = useState(false);
     const [openEditOrderDialog, setOpenEditOrderDialog] = useState(false);
     const [openDeleteOrderDialog, setOpenDeleteOrderDialog] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState({});
+    const [selectedOrder, setSelectedOrder] = useState({amount: order?.amount || 'Dummy',
+    customerRef: 'dummy@dummy.com',
+    date: Timestamp.now(),
+    productRef: 'Dummy place',
+    receiptImage: 'Dummy place'});
 
     const handleOpenMenu = (event, row) => {
         setOpen(event.currentTarget);
@@ -238,7 +242,7 @@ export default function OrdersPage() {
                                 />
                                 <TableBody>
                                     {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-
+                                        console.log(row)
                                         const { customerRef, date, productRef, id } = row;
 
                                         const formattedDate = format(new Date(date.toDate().toString()), 'dd MMMM yyyy')
@@ -247,42 +251,33 @@ export default function OrdersPage() {
 
                                         return (
                                             <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
-                                                <TableCell padding="checkbox" />
+                                            <TableCell padding="checkbox" />
 
-                                                <TableCell component="th" scope="row" padding="none" onClick={() => handleOpenDetailOrderDialog(row)} sx={{ cursor: 'pointer' }}>
-                                                    <Stack direction="row" alignItems="center" spacing={2}>
-                                                        <Typography variant="subtitle2" noWrap>
-                                                            {id}
-                                                        </Typography>
-                                                    </Stack>
-                                                </TableCell>
+                                            <TableCell component="th" scope="row" padding="none" onClick={() => handleOpenDetailOrderDialog(row)} sx={{ cursor: 'pointer' }}>
+                                                <Stack direction="row" alignItems="center" spacing={2}>
+                                                    <Typography variant="subtitle2" noWrap>
+                                                        {id}
+                                                    </Typography>
+                                                </Stack>
+                                            </TableCell>
 
-                                                <TableCell align="left" onClick={() => {
-                                                    handleOpenDetailOrderDialog();
-                                                    setSelectedOrder(row);
-                                                }} sx={{ cursor: 'pointer' }}>{formattedDate}</TableCell> 
+                                            <TableCell align="left" padding="none" onClick={() => handleOpenDetailOrderDialog(row)} sx={{ cursor: 'pointer' }}>{formattedDate}</TableCell>
 
-                                                <TableCell align="left" onClick={() => {
-                                                    handleOpenDetailOrderDialog();
-                                                    setSelectedOrder(row);
-                                                }} sx={{ cursor: 'pointer' }}>{customerRef}</TableCell>
+                                            <TableCell align="left" padding="none" onClick={() => handleOpenDetailOrderDialog(row)} sx={{ cursor: 'pointer' }}>{customerRef}</TableCell>
 
-                                                <TableCell align="left" onClick={() => {
-                                                    handleOpenDetailOrderDialog();
-                                                    setSelectedOrder(row);
-                                                }} sx={{ cursor: 'pointer' }}>{productRef}</TableCell>
+                                            <TableCell align="left" padding="none" onClick={() => handleOpenDetailOrderDialog(row)} sx={{ cursor: 'pointer' }}>{productRef}</TableCell>
 
-                                                <TableCell align="right">
-                                                    <IconButton size="large" color="inherit" onClick={(event) => {
-                                                        handleOpenMenu(event)
-                                                        setSelectedOrder(row)
-                                                    }}>
-                                                        <MoreVertIcon />
-                                                    </IconButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
+                                            <TableCell align="right">
+                                                <IconButton size="large" color="inherit" onClick={(event) => {
+                                                    handleOpenMenu(event)
+                                                    setSelectedOrder(row)
+                                                }}>
+                                                    <MoreVertIcon />
+                                                </IconButton>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
                                     {emptyRows > 0 && (
                                         <TableRow style={{ height: 53 * emptyRows }}>
                                             <TableCell colSpan={6} />
