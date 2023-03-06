@@ -75,8 +75,14 @@ function applySortFilter(array, comparator, query) {
         if (order !== 0) return order;
         return a[1] - b[1];
     });
+
+    // new Date(date.toDate().toString()),
     if (query) {
-        return filter(array, (_user) => _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1);
+        return filter(array, (_user) => 
+        _user.productRef.toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
+        _user.customerRef.toLowerCase().indexOf(query.toLowerCase())!== -1 ||
+        format(new Date(_user.date.toDate().toString()), 'dd MMMM yyyy').toLowerCase().indexOf(query.toLowerCase())!== -1
+        );
     }
     return stabilizedThis.map((el) => el[0]);
 }
@@ -198,6 +204,8 @@ export default function OrdersPage() {
         await setSelectedOrder({});
         setDialog(false);
     };
+
+    console.log(filteredUsers)
 
     return (
         <>
