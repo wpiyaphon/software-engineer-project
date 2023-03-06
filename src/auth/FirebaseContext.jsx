@@ -89,7 +89,9 @@ export function AuthProvider({ children }) {
         initialize();
     }, [initialize]);
 
-    const login = (email, password) => signInWithEmailAndPassword(AUTH, email, password);
+    const login = async (email, password) => (
+        signInWithEmailAndPassword(AUTH, email, password)
+    )
 
     const logout = () => signOut(AUTH);
 
