@@ -37,12 +37,13 @@ OrderDetailDialog.propTypes = {
 
 export default function OrderDetailDialog({ open, onClose, order }) {
 
-    const DUMMY_ORDER = {
-        receiptImage: '',
-        orderDate: '02/24/2023',
-        soldProduct: 'Princess Candle',
-        soldAmount: 4,
-        customer: { email: "hong@hotmail.com", firstName: "Piyaphon", lastName: "Wu", address: "Fake Street 123" }
+    //console.log(order)
+
+    const defaultValues = {
+        orderRef: order?.id || 'Dummy',
+        customerRef: order?.customerRef || 'dummy@dummy.com',
+        date: order?.date || 'Dummy place',
+        productRef: order?.productRef || 'Dummy order'
     };
 
     const handleCloseDialog = () => {
@@ -57,18 +58,18 @@ export default function OrderDetailDialog({ open, onClose, order }) {
             <DialogContent>
                 {/* Drop Downloaded image from firebase here */}
                 <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    <TextField fullWidth label="Date" value={DUMMY_ORDER.orderDate} disabled />
+                    <TextField fullWidth label="Date" value={defaultValues.date} disabled />
                 </Stack>
                 <Grid container direction="row" spacing={2} sx={{ mt: 0 }}>
                     <Grid item xs={6} md={8}>
-                        <TextField fullWidth label="Sold Product" value={DUMMY_ORDER.soldProduct} disabled />
+                        <TextField fullWidth label="Sold Product" value={defaultValues.productRef} disabled />
                     </Grid>
                     <Grid item xs={6} md={4}>
-                        <TextField fullWidth label="Sold Amount" value={DUMMY_ORDER.soldAmount} disabled />
+                        <TextField fullWidth label="Sold Amount" value={defaultValues.productRef} disabled />
                     </Grid>
                 </Grid>
                 <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                    <TextField fullWidth label="Customer" value={`${DUMMY_ORDER.customer.firstName} ${DUMMY_ORDER.customer.lastName}`} disabled />
+                    <TextField fullWidth label="Customer" value={defaultValues.customerRef} disabled />
                 </Stack>
             </DialogContent>
         </Dialog>
