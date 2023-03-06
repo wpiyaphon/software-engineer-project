@@ -8,7 +8,44 @@ import {
     AppWidgetSummary,
 } from '../sections/app';
 
+import { initializeApp } from "firebase/app";
+import {getFirestore, getCountFromServer, collection} from "firebase/firestore";
+import { FIREBASE_API } from "../config";
+import { useState, useEffect } from 'react';
+
 export default function DashboardPage() {
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
+
+    const [customerCount, setCustomerCount] = useState(0)
+    const [productCount, setProductCount] = useState(0)
+    const [orderCount, setOrderCount] = useState(0)
+
+    const fetchCustomerCount = async () => {
+       
+        const customerCount = await getCountFromServer(collection(db, "customers"))
+        setCustomerCount(customerCount.data().count)
+    }
+
+    const fetchProductCount = async () => {
+       
+        const productCount = await getCountFromServer(collection(db, "products"))
+        setProductCount(productCount.data().count)
+    }
+
+    const fetchOrderCount = async () => {
+       
+        const orderCount = await getCountFromServer(collection(db, "orders"))
+        setOrderCount(orderCount.data().count)
+    }
+    
+   
+    useEffect(()=>{
+        fetchCustomerCount();
+        fetchProductCount();
+        fetchOrderCount();
+    }, [])
+    
 
     return (
         <>
@@ -25,22 +62,22 @@ export default function DashboardPage() {
 
                 <Grid container spacing={3}>
                     <Grid item xs={12} sm={6} md={3}>
-                        <AppWidgetSummary title="Weekly Sales" total={714000} icon={'ant-design:android-filled'} />
+                        <AppWidgetSummary title="Weekly Sales" total={productCount} icon={'ant-design:android-filled'} />
                     </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
-                        <AppWidgetSummary title="New Users" total={1352831} color="info" icon={'ant-design:apple-filled'} />
+                        <AppWidgetSummary title="New Users" total={customerCount} color="info" icon={'ant-design:apple-filled'} />
                     </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
-                        <AppWidgetSummary title="Item Orders" total={1723315} color="warning" icon={'ant-design:windows-filled'} />
+                        <AppWidgetSummary title="Item Orders" total={orderCount} color="warning" icon={'ant-design:windows-filled'} />
                     </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
                         <AppWidgetSummary title="Bug Reports" total={234} color="error" icon={'ant-design:bug-filled'} />
                     </Grid>
 
-                    <Grid item xs={12} md={12} lg={12}>
+                    {/* <Grid item xs={12} md={12} lg={12}>
                         <AppWebsiteVisits
                             title="Product Sold"
                             subheader="(+43%) than last year"
@@ -78,7 +115,7 @@ export default function DashboardPage() {
                                 },
                             ]}
                         />
-                    </Grid>
+                    </Grid> */}
                 </Grid>
             </Container>
         </>

@@ -4,7 +4,7 @@ import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
 // firebase
 import { initializeApp } from "firebase/app";
-import {getFirestore, addDoc, getDocs, collection, Timestamp} from "firebase/firestore";
+import {getFirestore, addDoc, getDocs, collection, Timestamp, setDoc} from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FIREBASE_API } from "../../config";
 // form

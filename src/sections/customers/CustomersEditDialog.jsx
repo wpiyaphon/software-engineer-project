@@ -45,6 +45,7 @@ export default function CustomersEditDialog({ open, onClose, customer }) {
         customerEmail: customer?.email || '',
         customerAddress: customer?.address || ''
     }
+    
     const methods = useForm({
         resolver: yupResolver(EditCustomerSchema),
         defaultValues

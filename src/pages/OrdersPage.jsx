@@ -251,11 +251,20 @@ export default function CustomersPage() {
                                                     </Stack>
                                                 </TableCell>
 
-                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{formattedDate}</TableCell> 
+                                                <TableCell align="left" onClick={() => {
+                                                    handleOpenDetailOrderDialog();
+                                                    setSelectedOrder(row);
+                                                }} sx={{ cursor: 'pointer' }}>{formattedDate}</TableCell> 
 
-                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{customerRef}</TableCell>
+                                                <TableCell align="left" onClick={() => {
+                                                    handleOpenDetailOrderDialog();
+                                                    setSelectedOrder(row);
+                                                }} sx={{ cursor: 'pointer' }}>{customerRef}</TableCell>
 
-                                                <TableCell align="left" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{productRef}</TableCell>
+                                                <TableCell align="left" onClick={() => {
+                                                    handleOpenDetailOrderDialog();
+                                                    setSelectedOrder(row);
+                                                }} sx={{ cursor: 'pointer' }}>{productRef}</TableCell>
 
                                                 <TableCell align="right">
                                                     <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
@@ -341,9 +350,9 @@ export default function CustomersPage() {
             </Popover>
 
             <OrderNewDialog open={openNewOrderDialog} onClose={() => setOpenNewOrderDialog(false)} />
-            <OrderDeleteDialog open={openDeleteOrderDialog} onClose={() => setOpenDeleteOrderDialog(false)} />
-            <OrderEditDialog open={openEditOrderDialog} onClose={() => setOpenEditOrderDialog(false)} />
-            <OrderDetailDialog open={openDetailOrderDialog} onClose={() => setOpenDetailOrderDialog(false)} />
+            <OrderDeleteDialog open={openDeleteOrderDialog} onClose={() => setOpenDeleteOrderDialog(false)} order={selectedOrder}/>
+            <OrderEditDialog open={openEditOrderDialog} onClose={() => setOpenEditOrderDialog(false)} order={selectedOrder}/>
+            <OrderDetailDialog open={openDetailOrderDialog} onClose={() => setOpenDetailOrderDialog(false)} order={selectedOrder} />
         </>
     )
 }

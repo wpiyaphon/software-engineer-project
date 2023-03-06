@@ -236,7 +236,7 @@ export default function CustomersPage() {
 
                                                 <TableCell component="th" scope="row" padding="none" 
                                                 onClick={() => {
-                                                    handleOpenDetailCustomerDialog()
+                                                    handleOpenDetailCustomerDialog();
                                                     setSelectedCustomer(row)
                                                 }} 
                                                 sx={{ cursor: 'pointer' }}>
