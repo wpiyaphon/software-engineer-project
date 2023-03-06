@@ -221,7 +221,7 @@ export function NewProductDialog({ open, onClose }) {
     const values = watch();
 
     const onSubmit = (data) => {
-        console.log(data)
+
         try {
             const {
                 productImage,
@@ -257,7 +257,7 @@ export function NewProductDialog({ open, onClose }) {
                                 }, 2000))
                         })
                         .catch((error) => {
-                            console.log(error.message)
+                            console.error(error.message)
                             enqueueSnackbar(error.message, { variant: 'error' });
 
                             setTimeout(() => {
@@ -474,10 +474,9 @@ export function EditProductDialog({ open, onClose, product }) {
             const storageRef = ref(storage, product.imageName);
 
             deleteObject(storageRef)
-                .then(() => { console.log("Image successfully deleted") })
-                .catch((error) => { console.log(error.message) })
+                .then(() => enqueueSnackbar('Successfully deleted the product', { variant: 'success' }))
+                .catch((error) => { console.error(error.message) })
 
-            enqueueSnackbar('Successfully deleted the product', { variant: 'success' })
             setTimeout(() => {
                 closeSnackbar();
             }, 5000);

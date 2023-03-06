@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 import { Timestamp } from "firebase/firestore";
-import { format, getTime, formatDistanceToNow } from 'date-fns';
+import { format} from 'date-fns';
 // @mui
 import {
     Card,
@@ -199,8 +199,6 @@ export default function OrdersPage() {
         setDialog(false);
     };
 
-    console.log(open);
-
     return (
         <>
             <Helmet>
@@ -346,9 +344,9 @@ export default function OrdersPage() {
             </Popover>
 
             <OrderNewDialog open={openNewOrderDialog} onClose={() => setOpenNewOrderDialog(false)} />
-            {Object.keys(selectedOrder).length > 0 && <OrderDeleteDialog open={openDeleteOrderDialog} onClose={() => handleCloseDialog(setOpenDeleteOrderDialog)} order={selectedOrder}/>}
+            {Object.keys(selectedOrder).length > 0 && <OrderDeleteDialog open={openDeleteOrderDialog} onClose={() => handleCloseDialog(setOpenDeleteOrderDialog)} order={selectedOrder} />}
             {Object.keys(selectedOrder).length > 0 && <OrderEditDialog open={openEditOrderDialog} onClose={() => handleCloseDialog(setOpenEditOrderDialog)} order={selectedOrder} />}
-            <OrderDetailDialog open={openDetailOrderDialog} onClose={() => setOpenDetailOrderDialog(false)} />
+            {Object.keys(selectedOrder).length > 0 && <OrderDetailDialog open={openDetailOrderDialog} onClose={() => setOpenDetailOrderDialog(false)} order={selectedOrder} />}
         </>
     )
 }

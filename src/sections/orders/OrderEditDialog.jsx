@@ -5,7 +5,8 @@ import { useSnackbar } from 'notistack'
 import { format, getTime, formatDistanceToNow } from 'date-fns';
 // firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, query, getDocs, collection } from "firebase/firestore";
+import { getFirestore, doc, setDoc, query, getDocs, collection, Timestamp } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FIREBASE_API } from "../../config";
 // form
 import { useForm, Controller } from 'react-hook-form';
@@ -80,9 +81,7 @@ export default function OrderEditDialog({ open, onClose, order }) {
 
     const NewOrderSchema = Yup.object().shape({
         receiptImage: Yup.mixed()
-            .test('required', "Product image is required", (value) => value !== '')
-            .test('fileSize', 'The file is too large', (file) => file && file.size <= MAX_FILE_SIZE)
-            .test('fileFormat', 'Unsupported Format', (file) => file && FILE_FORMATS.includes(file.type)),
+            .test('required', "Product image is required", (file) => file !== ''),
         orderDate: Yup.string().required('Date is required'),
         soldProduct: Yup.string().required('Sold product is required'),
         soldAmount: Yup.number().typeError('Must be a number')
@@ -126,26 +125,57 @@ export default function OrderEditDialog({ open, onClose, order }) {
     const onSubmit = async (data) => {
         try {
 
-            console.log(data)
+            const {
+                customer,
+                orderDate,
+                receiptImage,
+                soldAmount,
+                soldProduct
+            } = data;
 
-            // ADD LOGIC TO OVERWRITE OLD DATA IN FIREBASE
+            if (receiptImage instanceof File) {
 
-            // await setDoc(doc(db, "orders", `${orderDate}`), {
-            //     firstName: customerFirstName,
-            //     lastName: customerLastName,
-            //     email: customerEmail,
-            //     address: customerAddress
-            // });
-
-            enqueueSnackbar('Editted order successfully', { variant: 'success' })
-            setTimeout(() => {
-                closeSnackbar();
-            }, 5000)
-
-            onClose();
-            setTimeout(() => {
-                reset(defaultValues);
-            }, 200);
+                const storage = getStorage();
+                const fileExtension = receiptImage.name.split('.').pop();
+                const storageRef = ref(storage, `orders/${customer}-${orderDate}.${fileExtension}`);
+                await uploadBytes(storageRef, receiptImage)
+                    .then(() => {
+                        getDownloadURL(storageRef)
+                            .then((url) => {
+                                return setDoc(doc(db, "orders", `${order.id}`), {
+                                    customerRef: customer,
+                                    date: Timestamp.fromDate(new Date(orderDate)),
+                                    amount: soldAmount,
+                                    productRef: soldProduct,
+                                    receiptImage: url
+                                })
+                                    .then(() => onClose())
+                                    .then(() => enqueueSnackbar('Edited order successfully', { variant: 'success' }))
+                                    .then(() => setTimeout(() => {
+                                        reset(defaultValues)
+                                    }, 200))
+                                    .then(() => setTimeout(() => {
+                                        closeSnackbar()
+                                    }, 2000))
+                            })
+                    })
+            } else {
+                await setDoc(doc(db, "orders", `${order.id}`), {
+                    customerRef: customer,
+                    date: Timestamp.fromDate(new Date(orderDate)),
+                    amount: soldAmount,
+                    productRef: soldProduct,
+                    receiptImage: receiptImage
+                })
+                    .then(() => onClose())
+                    .then(() => enqueueSnackbar('Edited order successfully', { variant: 'success' }))
+                    .then(() => setTimeout(() => {
+                        reset(defaultValues)
+                    }, 200))
+                    .then(() => setTimeout(() => {
+                        closeSnackbar()
+                    }, 2000))
+            }
 
         } catch (error) {
             enqueueSnackbar(error.message, { variant: 'error' });
