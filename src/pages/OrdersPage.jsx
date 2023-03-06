@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import { filter } from 'lodash';
 import { sentenceCase } from 'change-case';
 import { Timestamp } from "firebase/firestore";
@@ -36,9 +36,9 @@ import { CustomersListHead, CustomersListToolbar } from '../sections/customers';
 import { OrderNewDialog, OrderDeleteDialog, OrderEditDialog, OrderDetailDialog, OrdersListToolbar } from '../sections/orders';
 
 // firebase api
-import {initializeApp} from "firebase/app";
-import {FIREBASE_API} from "../config.jsx";
-import {collection, getFirestore, onSnapshot, query} from "firebase/firestore";
+import { initializeApp } from "firebase/app";
+import { FIREBASE_API } from "../config.jsx";
+import { collection, getFirestore, onSnapshot, query } from "firebase/firestore";
 
 // ----------------------------------------------------------------------
 
@@ -81,7 +81,7 @@ function applySortFilter(array, comparator, query) {
     return stabilizedThis.map((el) => el[0]);
 }
 
-export default function CustomersPage() {
+export default function OrdersPage() {
 
     const [open, setOpen] = useState(null);
 
@@ -102,23 +102,15 @@ export default function CustomersPage() {
 
     const [orders, setOrders] = useState([])
 
-    useEffect(()=> {
+    useEffect(() => {
         const q = query(collection(db, "orders"));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setOrders(snapshot.docs.map(doc => ({...doc.data(), id: doc.id})))
+            setOrders(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })))
         });
 
         return () => unsubscribe()
     }, [])
-
-    const handleOpenMenu = (event) => {
-        setOpen(event.currentTarget);
-    };
-
-    const handleCloseMenu = () => {
-        setOpen(null);
-    };
 
     const handleRequestSort = (event, property) => {
         const isAsc = orderBy === property && order === 'asc';
@@ -175,27 +167,39 @@ export default function CustomersPage() {
     const [openDetailOrderDialog, setOpenDetailOrderDialog] = useState(false);
     const [openEditOrderDialog, setOpenEditOrderDialog] = useState(false);
     const [openDeleteOrderDialog, setOpenDeleteOrderDialog] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [selectedOrder, setSelectedOrder] = useState({});
 
-    const handleOpenDetailOrderDialog = () => {
-        // setSelectedOrder
+    const handleOpenMenu = (event, row) => {
+        setOpen(event.currentTarget);
+        setSelectedOrder(row);
+    };
+
+    const handleCloseMenu = () => {
+        setOpen(null);
+        setSelectedOrder({});
+    };
+
+    const handleOpenDetailOrderDialog = async (row) => {
+        await setSelectedOrder(row);
         setOpenDetailOrderDialog(true);
     }
 
-    const handleOpenDeleteOrderDialog = () => {
-        // setSelectedOrder
+    const handleOpenDeleteOrderDialog = async () => {
+        setOpen(null)
         setOpenDeleteOrderDialog(true);
     };
 
-    const handleOpenEditOrderDialog = () => {
-        // setSelectedOrder
+    const handleOpenEditOrderDialog = async () => {
+        setOpen(null)
         setOpenEditOrderDialog(true);
     };
 
-    const handleCloseDialog = (setDialog) => {
-        // Set selected customer to be empty object here
+    const handleCloseDialog = async (setDialog) => {
+        await setSelectedOrder({});
         setDialog(false);
     };
+
+    console.log(open);
 
     return (
         <>
@@ -230,18 +234,18 @@ export default function CustomersPage() {
                                 />
                                 <TableBody>
                                     {filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                                        
+
                                         const { customerRef, date, productRef, id } = row;
-                                        
+
                                         const formattedDate = format(new Date(date.toDate().toString()), 'dd MMMM yyyy')
-                                        
+
                                         const selectedUser = selected.indexOf(id) !== -1;
 
                                         return (
                                             <TableRow hover key={id} tabIndex={-1} role="checkbox" selected={selectedUser}>
                                                 <TableCell padding="checkbox" />
 
-                                                <TableCell component="th" scope="row" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>
+                                                <TableCell component="th" scope="row" padding="none" onClick={() => handleOpenDetailOrderDialog(row)} sx={{ cursor: 'pointer' }}>
                                                     <Stack direction="row" alignItems="center" spacing={2}>
                                                         <Typography variant="subtitle2" noWrap>
                                                             {id}
@@ -249,14 +253,17 @@ export default function CustomersPage() {
                                                     </Stack>
                                                 </TableCell>
 
-                                                <TableCell align="left" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{formattedDate}</TableCell> 
+                                                <TableCell align="left" padding="none" onClick={() => handleOpenDetailOrderDialog(row)} sx={{ cursor: 'pointer' }}>{formattedDate}</TableCell>
 
-                                                <TableCell align="left" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{customerRef}</TableCell>
+                                                <TableCell align="left" padding="none" onClick={() => handleOpenDetailOrderDialog(row)} sx={{ cursor: 'pointer' }}>{customerRef}</TableCell>
 
-                                                <TableCell align="left" padding="none" onClick={handleOpenDetailOrderDialog} sx={{ cursor: 'pointer' }}>{productRef}</TableCell>
+                                                <TableCell align="left" padding="none" onClick={() => handleOpenDetailOrderDialog(row)} sx={{ cursor: 'pointer' }}>{productRef}</TableCell>
 
                                                 <TableCell align="right">
-                                                    <IconButton size="large" color="inherit" onClick={handleOpenMenu}>
+                                                    <IconButton size="large" color="inherit" onClick={(event) => {
+                                                        handleOpenMenu(event)
+                                                        setSelectedOrder(row)
+                                                    }}>
                                                         <MoreVertIcon />
                                                     </IconButton>
                                                 </TableCell>
@@ -339,8 +346,8 @@ export default function CustomersPage() {
             </Popover>
 
             <OrderNewDialog open={openNewOrderDialog} onClose={() => setOpenNewOrderDialog(false)} />
-            <OrderDeleteDialog open={openDeleteOrderDialog} onClose={() => setOpenDeleteOrderDialog(false)} />
-            <OrderEditDialog open={openEditOrderDialog} onClose={() => setOpenEditOrderDialog(false)} />
+            {Object.keys(selectedOrder).length > 0 && <OrderDeleteDialog open={openDeleteOrderDialog} onClose={() => handleCloseDialog(setOpenDeleteOrderDialog)} order={selectedOrder}/>}
+            {Object.keys(selectedOrder).length > 0 && <OrderEditDialog open={openEditOrderDialog} onClose={() => handleCloseDialog(setOpenEditOrderDialog)} order={selectedOrder} />}
             <OrderDetailDialog open={openDetailOrderDialog} onClose={() => setOpenDetailOrderDialog(false)} />
         </>
     )

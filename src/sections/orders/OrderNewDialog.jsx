@@ -4,7 +4,7 @@ import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
 // firebase
 import { initializeApp } from "firebase/app";
-import {getFirestore, addDoc, getDocs, collection, Timestamp} from "firebase/firestore";
+import { getFirestore, addDoc, getDocs, collection, Timestamp } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FIREBASE_API } from "../../config";
 // form
@@ -42,30 +42,30 @@ export default function OrderNewDialog({ open, onClose }) {
     const [product_options, setProduct_Options] = useState([])
 
     const fetchCustomers = async () => {
-       
+
         await getDocs(collection(db, "customers"))
-            .then((querySnapshot)=>{    
+            .then((querySnapshot) => {
                 const newData = querySnapshot.docs
-                    .map((doc) => ({...doc.data()}));
-                setCustomer_Options(newData);                
+                    .map((doc) => ({ ...doc.data() }));
+                setCustomer_Options(newData);
             })
     }
 
     const fetchProducts = async () => {
-       
+
         await getDocs(collection(db, "products"))
-            .then((querySnapshot)=>{               
+            .then((querySnapshot) => {
                 const newData = querySnapshot.docs
-                    .map((doc) => ({name: doc.data().name, amount: doc.data().variations[0].price}));
-                setProduct_Options(newData);                
+                    .map((doc) => ({ ...doc.data() }));
+                setProduct_Options(newData);
             })
     }
-   
-    useEffect(()=>{
+
+    useEffect(() => {
         fetchCustomers();
         fetchProducts();
     }, [])
-    
+
 
     const PRODUCT_OPTIONS = product_options;
 
@@ -144,7 +144,8 @@ export default function OrderNewDialog({ open, onClose }) {
                                 customerRef: customer,
                                 date: Timestamp.fromDate(new Date(orderDate)),
                                 amount: soldAmount,
-                                productRef: soldProduct
+                                productRef: soldProduct,
+                                receiptImage: imgURL
                             })
                                 .then(() => onClose())
                                 .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))

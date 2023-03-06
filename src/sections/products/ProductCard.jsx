@@ -26,7 +26,7 @@ ShopProductCard.propTypes = {
 };
 
 export default function ShopProductCard({ product, onEdit }) {
-  const { name, cover } = product;
+  const { name, cover, amount } = product;
 
   return (
     <Card>
@@ -72,7 +72,7 @@ export default function ShopProductCard({ product, onEdit }) {
             >
             </Typography>
             &nbsp;
-            0 In Stock
+            {amount} In Stock
           </Typography>
         </Stack>
       </Stack>

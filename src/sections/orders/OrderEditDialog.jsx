@@ -1,10 +1,11 @@
 import PropTypes from 'prop-types';
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
+import { format, getTime, formatDistanceToNow } from 'date-fns';
 // firebase
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, query, getDocs, collection } from "firebase/firestore";
 import { FIREBASE_API } from "../../config";
 // form
 import { useForm, Controller } from 'react-hook-form';
@@ -35,11 +36,39 @@ OrderEditDialog.propTypes = {
 export default function OrderEditDialog({ open, onClose, order }) {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-    // const app = initializeApp(FIREBASE_API);
-    // const db = getFirestore(app);
+    const app = initializeApp(FIREBASE_API);
+    const db = getFirestore(app);
+
+    const [customer_options, setCustomer_Options] = useState([])
+    const [product_options, setProduct_Options] = useState([])
+
+    const fetchCustomers = async () => {
+
+        await getDocs(collection(db, "customers"))
+            .then((querySnapshot) => {
+                const newData = querySnapshot.docs
+                    .map((doc) => ({ ...doc.data() }));
+                setCustomer_Options(newData);
+            })
+    }
+
+    const fetchProducts = async () => {
+
+        await getDocs(collection(db, "products"))
+            .then((querySnapshot) => {
+                const newData = querySnapshot.docs
+                    .map((doc) => ({ ...doc.data() }));
+                setProduct_Options(newData);
+            })
+    }
+
+    useEffect(() => {
+        fetchCustomers();
+        fetchProducts();
+    }, [])
 
     const PRODUCT_OPTIONS = [
-        { name: 'Princess Candle', amount: 5 },
+        { name: ' Candle', amount: 5 },
         { name: 'Couple Candle', amount: 10 }
     ];
 
@@ -48,14 +77,6 @@ export default function OrderEditDialog({ open, onClose, order }) {
         { email: 'kaung@hotmail.com', firstName: 'Kaung', lastName: 'Thu', address: '102 Fake Street' },
         { email: 'tar@hotmail.com', firstName: 'Thanatuch', lastName: 'Lertritsirikul', address: '101 Fake Street' },
     ];
-
-    const DUMMY_ORDER = {
-        receiptImage: '',
-        orderDate: '02/24/2023',
-        soldProduct: 'Princess Candle',
-        soldAmount: 4,
-        customer: 'hong@hotmail.com'
-    };
 
     const NewOrderSchema = Yup.object().shape({
         receiptImage: Yup.mixed()
@@ -70,12 +91,13 @@ export default function OrderEditDialog({ open, onClose, order }) {
         customer: Yup.string().email('Must be a valid email').required('Customer is required'),
     });
 
+
     const defaultValues = {
-        receiptImage: order?.receiptImage || DUMMY_ORDER.receiptImage,
-        orderDate: order?.orderDate || DUMMY_ORDER.orderDate,
-        soldProduct: order?.soldProduct || DUMMY_ORDER.soldProduct,
-        soldAmount: order?.soldAmount || DUMMY_ORDER.soldAmount,
-        customer: order?.customer || DUMMY_ORDER.customer
+        receiptImage: order?.receiptImage,
+        orderDate: format(new Date(order?.date.toDate().toString()), 'MM/dd/yyyy'),
+        soldProduct: order?.productRef,
+        soldAmount: order?.amount,
+        customer: order?.customerRef
     }
 
     const methods = useForm({
@@ -140,7 +162,7 @@ export default function OrderEditDialog({ open, onClose, order }) {
     // Amount validation
     const handleChangeAmount = (event) => {
         const minValue = 0
-        const maxValue = PRODUCT_OPTIONS.find(product => product.name === soldProduct).amount;
+        const maxValue = product_options.find(product => product.name === soldProduct).amount;
         if (maxValue === 0) {
             setValue('soldAmount', 'Product is out of stock');
         } else {
@@ -215,7 +237,7 @@ export default function OrderEditDialog({ open, onClose, order }) {
                                 label="Sold product"
                                 SelectProps={{ native: false, sx: { textTransform: 'capitalize' } }}
                             >
-                                {PRODUCT_OPTIONS.map((option) => (
+                                {product_options.map((option) => (
                                     <MenuItem
                                         key={option.name}
                                         value={option.name}
@@ -244,7 +266,7 @@ export default function OrderEditDialog({ open, onClose, order }) {
                             label="Customer"
                             SelectProps={{ native: false, sx: { textTransform: 'capitalize' } }}
                         >
-                            {CUSTOMER_OPTIONS.map((option) => (
+                            {customer_options.map((option) => (
                                 <MenuItem
                                     key={option.email}
                                     value={option.email}

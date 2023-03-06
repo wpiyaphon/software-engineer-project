@@ -178,10 +178,12 @@ export default function CustomersPage() {
     };
 
     const handleOpenDeleteCustomerDialog = () => {
+        setOpen(null)
         setOpenDeleteCustomerDialog(true);
     };
 
     const handleOpenDetailCustomerDialog = () => {
+        setOpen(null)
         setOpenDetailCustomerDialog(true);
     };
 

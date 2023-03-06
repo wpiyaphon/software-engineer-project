@@ -1,10 +1,11 @@
 import PropTypes from 'prop-types';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
+import { format, getTime, formatDistanceToNow } from 'date-fns';
 // firebase
 import { initializeApp } from "firebase/app";
-import {getFirestore, getDocs, query, where, collection} from "firebase/firestore";
+import { getFirestore, getDocs, query, where, collection } from "firebase/firestore";
 import { FIREBASE_API } from "../../config";
 // form
 import { useForm } from 'react-hook-form';
@@ -32,7 +33,7 @@ export default function CustomersDetailDialog({ open, onClose, customer }) {
 
     const [orders, setOrders] = useState([])
 
-    
+
 
     const defaultValues = {
         customerName: customer?.name || 'Dummy',
@@ -43,27 +44,18 @@ export default function CustomersDetailDialog({ open, onClose, customer }) {
     const fetchOrders = async () => {
         const orderRef = collection(db, "orders")
         const q = query(orderRef, where("customerRef", "==", defaultValues.customerEmail));
-       
-        await getDocs(q)
-            .then((querySnapshot)=>{               
-                const newData = querySnapshot.docs
-                    .map((doc) => ({...doc.data(), id: doc.id}));
-                setOrders(newData);             
-            })
 
-        
+        await getDocs(q)
+            .then((querySnapshot) => {
+                const newData = querySnapshot.docs
+                    .map((doc) => ({ ...doc.data(), id: doc.id }));
+                setOrders(newData);
+            })
     }
-   
-    useEffect(()=>{
+
+    useEffect(() => {
         fetchOrders();
     }, [customer])
-
-    // Add logic to get customer's orders here
-
-    // Add logic to open receipt image on new Tab
-    const handleOpenReceiptImage = () => {
-        console.log("Receipt image will be added soon!")
-    };
 
     return (
         <Dialog fullWidth open={open} onClose={onClose}>
@@ -87,16 +79,18 @@ export default function CustomersDetailDialog({ open, onClose, customer }) {
                             <OrdersListHead />
                             <TableBody>
                                 {orders.map((order) => {
-                                    const {date, productRef, amount, id} = order
-                                    const formattedDate = date.toDate().toString()
+                                    const { date, productRef, amount, id, receiptImage } = order
+
+                                    const formattedDate = format(new Date(date.toDate().toString()), 'dd MMMM yyyy')
+
                                     return (
-                                    
+
                                         <TableRow key={id}>
                                             <TableCell align="left">{formattedDate}</TableCell>
                                             <TableCell align="left">{productRef}</TableCell>
                                             <TableCell align="center">{amount}</TableCell>
                                             <TableCell align="center">
-                                                <IconButton onClick={handleOpenReceiptImage}>
+                                                <IconButton onClick={() => window.open(receiptImage)}>
                                                     <NavigateNextRoundedIcon />
                                                 </IconButton>
                                             </TableCell>

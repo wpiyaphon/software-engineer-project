@@ -3,9 +3,10 @@ import { useState, useCallback, useEffect } from "react";
 import PropTypes from 'prop-types';
 import * as Yup from 'yup';
 import { useSnackbar } from 'notistack'
+import { filter } from 'lodash';
 // firebase
 import { initializeApp } from "firebase/app";
-import {getFirestore, doc, addDoc, setDoc, query, collection, onSnapshot, Timestamp, deleteDoc} from "firebase/firestore";
+import { getFirestore, doc, addDoc, setDoc, query, collection, onSnapshot, Timestamp, deleteDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { FIREBASE_API } from "../config";
 // form
@@ -22,7 +23,7 @@ import FormProvider, { RHFTextField, RHFUpload } from '../components/hook-form';
 // sections
 import { ProductList } from '../sections/products';
 // mock
-import {orderBy} from "lodash/collection.js";
+import { orderBy } from "lodash/collection.js";
 
 // ----------------------------------------------------------------------
 
@@ -85,15 +86,52 @@ export default function ProductsPage() {
 
     const [products, setProducts] = useState([])
 
-    useEffect(()=> {
-        const q = query(collection(db, "products"),  orderBy("name", "desc"));
+    useEffect(() => {
+        const q = query(collection(db, "products"));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setProducts(snapshot.docs.map(doc => ({...doc.data(), id: doc.id})))
+            setProducts(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })))
         });
 
         return () => unsubscribe()
     }, [])
+
+    // Filter
+
+    const [order, setOrder] = useState('asc');
+
+    const [orderBy, setOrderBy] = useState('name');
+
+    function descendingComparator(a, b, orderBy) {
+        if (b[orderBy] < a[orderBy]) {
+            return -1;
+        }
+        if (b[orderBy] > a[orderBy]) {
+            return 1;
+        }
+        return 0;
+    }
+
+    function getComparator(order, orderBy) {
+        return order === 'desc'
+            ? (a, b) => descendingComparator(a, b, orderBy)
+            : (a, b) => -descendingComparator(a, b, orderBy);
+    }
+
+    function applySortFilter(array, comparator, query) {
+        const stabilizedThis = array.map((el, index) => [el, index]);
+        stabilizedThis.sort((a, b) => {
+            const order = comparator(a[0], b[0]);
+            if (order !== 0) return order;
+            return a[1] - b[1];
+        });
+        if (query) {
+            return filter(array, (_user) => _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1);
+        }
+        return stabilizedThis.map((el) => el[0]);
+    }
+
+    const filteredProducts = applySortFilter(products, getComparator(order, orderBy), filterName);
 
     return (
         <>
@@ -122,7 +160,7 @@ export default function ProductsPage() {
                         <AddRoundedIcon /> New Product
                     </Button>
                 </StyledRoot>
-                <ProductList products={products} onEdit={handleSelect} />
+                <ProductList products={filteredProducts} onEdit={handleSelect} />
             </Container>
             <NewProductDialog open={openNewProductDialog} onClose={() => setOpenNewProductDialog(false)} />
             {Object.keys(selectedProduct).length !== 0 && (
@@ -201,26 +239,13 @@ export function NewProductDialog({ open, onClose }) {
                 .then(() => {
                     getDownloadURL(storageRef)
                         .then((url) => {
-                            console.log(url)
                             imgURL = url
                             addDoc(collection(db, "products"), {
                                 name: productName,
-                                description: "Placeholder",
+                                amount: productAmount,
                                 cover: imgURL,
                                 imageName: `products/${productName}.${fileExtension}`,
                                 addedOn: Timestamp.now(),
-                                variations: [
-                                    {
-                                        name: "classic",
-                                        price: productAmount,
-                                        stock: 4
-                                    },
-                                    {
-                                        name: "deluxe",
-                                        price: productAmount+100,
-                                        stock: 6
-                                    }
-                                ]
                             })
                                 .then(() => onClose())
                                 .then(() => enqueueSnackbar('Added product successfully', { variant: 'success' }))
@@ -334,7 +359,8 @@ export function EditProductDialog({ open, onClose, product }) {
     const db = getFirestore(app);
 
     const EditProductDialog = Yup.object().shape({
-        productImage: Yup.string().required('Product image is required'),
+        productImage: Yup.mixed()
+            .test('required', "Product image is required", (file) => file !== ''),
         productName: Yup.string().required('Product name is required'),
         productAmount: Yup.number().required('Product amount is required')
     });
@@ -342,7 +368,7 @@ export function EditProductDialog({ open, onClose, product }) {
     const defaultValues = {
         productImage: product?.cover || '',
         productName: product?.name || '',
-        productAmount: product?.variations[0].price || 0
+        productAmount: product?.amount || 0
     }
 
     const methods = useForm({
@@ -365,35 +391,52 @@ export function EditProductDialog({ open, onClose, product }) {
         try {
             const {
                 productName,
-                productAmount
+                productAmount,
+                productImage
             } = data;
 
-            await setDoc(doc(db, "products", product.id), {
-                name: productName,
-                description: "Placeholder",
-                cover: product.cover,
-                addedOn: Timestamp.now(),
-                variations: [
-                    {
-                        name: "classic",
-                        price: productAmount,
-                        stock: 4
-                    },
-                    {
-                        name: "deluxe",
-                        price: productAmount+100,
-                        stock: 6
-                    }
-                ]
-            })
-                .then(() => onClose())
-                .then(() => enqueueSnackbar('Edited product successfully', { variant: 'success' }))
-                .then(() => setTimeout(() => {
-                    reset(defaultValues)
-                }, 200))
-                .then(() => setTimeout(() => {
-                    closeSnackbar()
-                }, 2000))
+            if (productImage instanceof File) {
+
+                const storage = getStorage();
+                const fileExtension = productImage.name.split('.').pop();
+                const storageRef = ref(storage, `products/${productName}.${fileExtension}`);
+                await uploadBytes(storageRef, productImage)
+                    .then(() => {
+                        getDownloadURL(storageRef)
+                            .then((url) => {
+                                return setDoc(doc(db, "products", product.id), {
+                                    name: productName,
+                                    amount: productAmount,
+                                    cover: url,
+                                    addedOn: Timestamp.now(),
+                                    imageName: `products/${productName}.${fileExtension}`,
+                                })
+                                    .then(() => onClose())
+                                    .then(() => enqueueSnackbar('Edited product successfully', { variant: 'success' }))
+                                    .then(() => setTimeout(() => {
+                                        reset(defaultValues)
+                                    }, 200))
+                                    .then(() => setTimeout(() => {
+                                        closeSnackbar()
+                                    }, 2000))
+                            })
+                    })
+            } else {
+                await setDoc(doc(db, "products", product.id), {
+                    name: productName,
+                    amount: productAmount,
+                    cover: product.cover,
+                    addedOn: Timestamp.now(),
+                })
+                    .then(() => onClose())
+                    .then(() => enqueueSnackbar('Edited product successfully', { variant: 'success' }))
+                    .then(() => setTimeout(() => {
+                        reset(defaultValues)
+                    }, 200))
+                    .then(() => setTimeout(() => {
+                        closeSnackbar()
+                    }, 2000))
+            }
         } catch (error) {
             console.error(error.message);
             setError('afterSubmit', {
@@ -431,8 +474,8 @@ export function EditProductDialog({ open, onClose, product }) {
             const storageRef = ref(storage, product.imageName);
 
             deleteObject(storageRef)
-            .then(() => {console.log("Image successfully deleted")})
-            .catch((error) => {console.log(error.message)})
+                .then(() => { console.log("Image successfully deleted") })
+                .catch((error) => { console.log(error.message) })
 
             enqueueSnackbar('Successfully deleted the product', { variant: 'success' })
             setTimeout(() => {
