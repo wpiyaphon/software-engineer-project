@@ -72,10 +72,6 @@ export default function CustomersNewDialog({ open, onClose }) {
                 lastName: customerLastName,
                 email: customerEmail,
                 address: customerAddress,
-                company: "Microsoft",
-                isVerified: true,
-                role: "Full Stack Developer",
-                status: "active"
             });
 
             enqueueSnackbar('Created customer successfully', { variant: 'success' })

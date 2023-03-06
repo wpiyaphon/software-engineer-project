@@ -71,9 +71,9 @@ function applySortFilter(array, comparator, query) {
         return a[1] - b[1];
     });
     if (query) {
-        return filter(array, (_user) => 
-        _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
-        _user.email.toLowerCase().indexOf(query.toLowerCase())!== -1
+        return filter(array, (_user) =>
+            _user.name.toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
+            _user.email.toLowerCase().indexOf(query.toLowerCase()) !== -1
         );
     }
     return stabilizedThis.map((el) => el[0]);
@@ -109,14 +109,6 @@ export default function CustomersPage() {
 
         return () => unsubscribe()
     }, [])
-
-    const handleOpenMenu = (event) => {
-        setOpen(event.currentTarget);
-    };
-
-    const handleCloseMenu = () => {
-        setOpen(null);
-    };
 
     const handleRequestSort = (event, property) => {
         const isAsc = orderBy === property && order === 'asc';
@@ -173,10 +165,19 @@ export default function CustomersPage() {
     const [openDetailCustomerDialog, setOpenDetailCustomerDialog] = useState(false);
     const [openEditCustomerDialog, setOpenEditCustomerDialog] = useState(false);
     const [openDeleteCustomerDialog, setOpenDeleteCustomerDialog] = useState(false);
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [selectedCustomer, setSelectedCustomer] = useState({});
+
+    const handleOpenMenu = (event) => {
+        setOpen(event.currentTarget);
+    };
+
+    const handleCloseMenu = () => {
+        setOpen(null);
+        setSelectedOrder({});
+    };
 
     const handleOpenEditCustomerDialog = () => {
-        // Set selected customer here
+        setOpen(null)
         setOpenEditCustomerDialog(true);
     };
 
@@ -185,14 +186,14 @@ export default function CustomersPage() {
         setOpenDeleteCustomerDialog(true);
     };
 
-    const handleOpenDetailCustomerDialog = () => {
-        setOpen(null)
+    const handleOpenDetailCustomerDialog = async (row) => {
+        await setSelectedCustomer(row);
         setOpenDetailCustomerDialog(true);
     };
 
-    const handleCloseDialog = (setDialog) => {
-        // Set selected customer to be empty object here
-        setDialog(false);
+    const handleCloseDialog = async (setDialog) => {
+        await setDialog(false);
+        setSelectedCustomer({})
     };
 
     return (
@@ -236,10 +237,7 @@ export default function CustomersPage() {
                                                 <TableCell padding="checkbox" />
 
                                                 <TableCell component="th" scope="row" padding="none"
-                                                    onClick={() => {
-                                                        handleOpenDetailCustomerDialog()
-                                                        setSelectedCustomer(row)
-                                                    }}
+                                                    onClick={() => handleOpenDetailCustomerDialog(row)}
                                                     sx={{ cursor: 'pointer' }}>
                                                     <Stack direction="row" alignItems="center" spacing={2}>
                                                         <Typography variant="subtitle2" noWrap>
@@ -249,17 +247,11 @@ export default function CustomersPage() {
                                                 </TableCell>
 
                                                 <TableCell align="left" padding="none"
-                                                    onClick={() => {
-                                                        handleOpenDetailCustomerDialog()
-                                                        setSelectedCustomer(row)
-                                                    }}
+                                                    onClick={() => handleOpenDetailCustomerDialog(row)}
                                                     sx={{ cursor: 'pointer' }}>{email}</TableCell>
 
                                                 <TableCell align="left" padding="none"
-                                                    onClick={() => {
-                                                        handleOpenDetailCustomerDialog()
-                                                        setSelectedCustomer(row)
-                                                    }}
+                                                    onClick={() => handleOpenDetailCustomerDialog(row)}
                                                     sx={{ cursor: 'pointer' }}>{address}</TableCell>
 
                                                 <TableCell align="right">
@@ -350,9 +342,9 @@ export default function CustomersPage() {
             </Popover>
 
             <CustomersNewDialog open={openNewCustomerDialog} onClose={() => setOpenNewCustomerDialog(false)} />
-            <CustomersDetailDialog open={openDetailCustomerDialog} onClose={() => handleCloseDialog(setOpenDetailCustomerDialog)} customer={selectedCustomer} />
-            <CustomersEditDialog open={openEditCustomerDialog} onClose={() => handleCloseDialog(setOpenEditCustomerDialog)} customer={selectedCustomer} />
-            <CustomersDeleteDialog open={openDeleteCustomerDialog} onClose={() => handleCloseDialog(setOpenDeleteCustomerDialog)} customer={selectedCustomer} />
+            {Object.keys(selectedCustomer).length > 0 && <CustomersDetailDialog open={openDetailCustomerDialog} onClose={() => handleCloseDialog(setOpenDetailCustomerDialog)} customer={selectedCustomer} />}
+            {Object.keys(selectedCustomer).length > 0 && <CustomersEditDialog open={openEditCustomerDialog} onClose={() => handleCloseDialog(setOpenEditCustomerDialog)} customer={selectedCustomer} />}
+            {Object.keys(selectedCustomer).length > 0 && <CustomersDeleteDialog open={openDeleteCustomerDialog} onClose={() => handleCloseDialog(setOpenDeleteCustomerDialog)} customer={selectedCustomer} />}
         </>
     )
 }

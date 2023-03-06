@@ -201,11 +201,9 @@ export default function OrdersPage() {
     };
 
     const handleCloseDialog = async (setDialog) => {
-        await setSelectedOrder({});
-        setDialog(false);
+        await setDialog(false);
+        setSelectedOrder({});
     };
-
-    console.log(filteredUsers)
 
     return (
         <>
